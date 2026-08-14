@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://sites.openai.com"),
+  metadataBase: new URL("https://soberyimo.github.io"),
   title: {
-    default: "Research Console · 私密快照",
+    default: "Research Console · 公开快照",
     template: "%s · Research Console",
   },
   description: "云见财报 ResearchOS 的只读 Web Snapshot。",
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-  },
+  robots: { index: true, follow: true },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -29,14 +26,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body>
         <header className="topbar">
-          <a className="brand" href="/">
+          <Link className="brand" href="/">
             <span className="brand-mark">云见</span>
             <span>
               <strong>Research Console</strong>
-              <small>私密快照 · 只读</small>
+              <small>公开快照 · 只读</small>
             </span>
-          </a>
-          <div className="readonly-badge">Private Preview</div>
+          </Link>
+          <div className="readonly-badge">Public Snapshot</div>
         </header>
         {children}
         <footer>
