@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -42,7 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <span>派生快照 · ResearchOS production 仍是唯一事实源</span>
           <span>Console v0.1.3 · 无写回能力</span>
         </footer>
-        <script src="/snapshot-app.js" defer />
+        <Script src="/snapshot-app.js" strategy="afterInteractive" />
       </body>
     </html>
   );
