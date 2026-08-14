@@ -25,9 +25,16 @@ test("snapshot contract remains derived, canonical-only, and publishable", async
   assert.equal(snapshot.production_mutation, false);
   assert.equal(snapshot.access_intent, "public_github_pages");
   assert.equal(snapshot.source_console_version, "0.1.3");
-  assert.equal(snapshot.summary.canonical_output_count, 2);
-  assert.equal(snapshot.summary.finding_count, 72);
-  assert.deepEqual(Object.keys(snapshot.company_pages).sort(), ["co_000002", "co_000004"]);
+  assert.equal(snapshot.summary.canonical_output_count, 6);
+  assert.equal(snapshot.summary.finding_count, 138);
+  assert.deepEqual(Object.keys(snapshot.company_pages).sort(), [
+    "co_000001",
+    "co_000002",
+    "co_000003",
+    "co_000004",
+    "co_000005",
+    "co_000006",
+  ]);
   for (const page of Object.values(snapshot.company_pages)) {
     assert.equal(page.visibility, "publishable");
     assert.match(page.publication_decision_id, /^pubdec_[0-9a-f]{24}$/);
@@ -47,13 +54,23 @@ test("home renders the frozen v0.1.3 product scope", async () => {
   assert.match(html, /结论、数据、证据，都在这里/);
   assert.match(html, /高通/);
   assert.match(html, /小鹏汽车/);
-  assert.doesNotMatch(html, /宁德时代|理想汽车|英伟达|吉利汽车/);
+  assert.match(html, /宁德时代/);
+  assert.match(html, /理想汽车/);
+  assert.match(html, /英伟达/);
+  assert.match(html, /吉利汽车/);
   assert.match(html, /公开快照 · 只读/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 });
 
 test("canonical company pages default to financial data and keep source modules", async () => {
-  for (const companyId of ["co_000004", "co_000002"]) {
+  for (const companyId of [
+    "co_000001",
+    "co_000002",
+    "co_000003",
+    "co_000004",
+    "co_000005",
+    "co_000006",
+  ]) {
     const response = await render(`/company/${companyId}`);
     assert.equal(response.status, 200);
     const html = await response.text();
@@ -72,9 +89,9 @@ test("canonical company pages default to financial data and keep source modules"
 });
 
 test("unknown companies fail closed without borrowing another canonical output", async () => {
-  const response = await render("/company/co_000001");
+  const response = await render("/company/co_999999");
   assert.equal(response.status, 404);
   const html = await response.text();
   assert.match(html, /尚无正式研究结果/);
-  assert.doesNotMatch(html, /ro_41c82f9d82e343d3c278968b|ro_351e8bf1f00e2875ac3fed65/);
+  assert.doesNotMatch(html, /ro_[0-9a-f]{24}/);
 });

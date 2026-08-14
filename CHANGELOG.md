@@ -1,5 +1,18 @@
 # 变更记录
 
+## [Six-company pre-launch readiness] - 2026-08-15
+
+### Changed
+
+- 公开快照验收范围扩展为 Qualcomm、XPeng、宁德时代、理想汽车、英伟达和吉利汽车。
+- 公开导出仍 fail closed：六个当前 canonical output 必须全部具有与当前 canonical 哈希绑定的 active `publishable` 授权。
+
+### Validation
+
+- 上线前隔离演练：6 家公司、138 条 findings。
+- Build、Snapshot tests 4/4、lint、GitHub Pages export / verify：PASS。
+- 正式发布登记、Canonical 与当前公开 Snapshot：未改写。
+
 ## [Public GitHub Pages Snapshot] - 2026-08-14
 
 ### Added

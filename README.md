@@ -47,7 +47,7 @@ npm run pages:export
 npm run pages:verify
 ```
 
-成品位于 `github-pages-dist/`，包含首页、Qualcomm、XPeng 和必要 CSS / JavaScript。公开成品不部署原始 `snapshot/research_snapshot.json`，也不依赖 Vinext/Next 服务端运行时。
+成品位于 `github-pages-dist/`，当前发布目标包含首页、Qualcomm、XPeng、宁德时代、理想汽车、英伟达和吉利汽车，以及必要 CSS / JavaScript。公开成品不部署原始 `snapshot/research_snapshot.json`，也不依赖 Vinext/Next 服务端运行时。
 
 ## 分支与部署
 
