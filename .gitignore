@@ -38,6 +38,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/github-pages-dist/
 
 # Generated, derived snapshot data is never source code.
 /snapshot/*.json

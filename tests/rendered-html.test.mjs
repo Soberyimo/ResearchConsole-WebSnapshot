@@ -15,7 +15,7 @@ async function render(path = "/") {
   );
 }
 
-test("snapshot contract remains derived, canonical-only, and internal", async () => {
+test("snapshot contract remains derived, canonical-only, and publishable", async () => {
   const snapshot = JSON.parse(
     await readFile(new URL("snapshot/research_snapshot.json", projectRoot), "utf8"),
   );
@@ -23,13 +23,14 @@ test("snapshot contract remains derived, canonical-only, and internal", async ()
   assert.equal(snapshot.derived, true);
   assert.equal(snapshot.authoritative, false);
   assert.equal(snapshot.production_mutation, false);
-  assert.equal(snapshot.access_intent, "owner_only_private_preview");
+  assert.equal(snapshot.access_intent, "public_github_pages");
   assert.equal(snapshot.source_console_version, "0.1.3");
   assert.equal(snapshot.summary.canonical_output_count, 2);
   assert.equal(snapshot.summary.finding_count, 72);
   assert.deepEqual(Object.keys(snapshot.company_pages).sort(), ["co_000002", "co_000004"]);
   for (const page of Object.values(snapshot.company_pages)) {
-    assert.equal(page.visibility, "internal_only");
+    assert.equal(page.visibility, "publishable");
+    assert.match(page.publication_decision_id, /^pubdec_[0-9a-f]{24}$/);
     assert.match(page.research_output_id, /^ro_[0-9a-f]{24}$/);
   }
   assert.ok(Object.keys(snapshot.source_manifest).length > 0);
@@ -47,8 +48,7 @@ test("home renders the frozen v0.1.3 product scope", async () => {
   assert.match(html, /高通/);
   assert.match(html, /小鹏汽车/);
   assert.doesNotMatch(html, /宁德时代|理想汽车|英伟达|吉利汽车/);
-  assert.match(html, /私密快照 · 只读/);
-  assert.match(html, /noindex/);
+  assert.match(html, /公开快照 · 只读/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 });
 
@@ -65,7 +65,8 @@ test("canonical company pages default to financial data and keep source modules"
     assert.match(html, /研究缺口/);
     assert.match(html, /来源与证据/);
     assert.match(html, /数据覆盖/);
-    assert.match(html, /internal_only/);
+    assert.match(html, /publishable/);
+    assert.doesNotMatch(html, />内部研究</);
     assert.match(html, /id="page-data"/);
   }
 });

@@ -26,9 +26,11 @@ CONSOLE_DIR = RESEARCHOS_ROOT / "00_系统/ResearchConsole_v0.1"
 CONSOLE_ENTRY = CONSOLE_DIR / "research_console.py"
 SNAPSHOT_PATH = PROJECT_DIR / "snapshot/research_snapshot.json"
 PUBLIC_DIR = PROJECT_DIR / "public"
+PUBLICATION_DECISIONS_PATH = RESEARCHOS_ROOT / "05_研究结果/publication_decisions.json"
 
 SNAPSHOT_SCHEMA = "ResearchConsole-WebSnapshot-0.1"
-ALLOWED_VISIBILITIES = {"internal_only"}
+PUBLICATION_SCHEMA = "M4-publication-decisions-0.1"
+ALLOWED_VISIBILITIES = {"publishable"}
 MAIN_RE = re.compile(r"<main>(.*)</main><footer>", re.DOTALL)
 PAGE_DATA_RE = re.compile(
     r'<script id="page-data" type="application/json">(.*?)</script>', re.DOTALL
@@ -81,7 +83,13 @@ def extract_main(document: str) -> str:
     match = MAIN_RE.search(document)
     if not match:
         raise SnapshotError("冻结 Console 渲染结果缺少 main 区域")
-    return match.group(1).replace("数据缓存更新于", "快照生成于")
+    return (
+        match.group(1)
+        .replace("数据缓存更新于", "快照生成于")
+        .replace("内部研究", "公开研究")
+        .replace("原始可见性：internal_only", "当前可见性：publishable")
+        .replace(" · internal_only", " · publishable")
+    )
 
 
 def extract_page_data(document: str) -> dict[str, Any]:
@@ -92,6 +100,46 @@ def extract_page_data(document: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise SnapshotError("公司页面图表数据格式无效")
     return payload
+
+
+def publication_decisions(canonical_index: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    if not PUBLICATION_DECISIONS_PATH.is_file():
+        raise SnapshotError("正式发布授权注册表不存在")
+    payload = json.loads(PUBLICATION_DECISIONS_PATH.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != PUBLICATION_SCHEMA or not isinstance(payload.get("decisions"), dict):
+        raise SnapshotError("正式发布授权注册表契约无效")
+    canonical_sha = sha256_bytes(
+        (RESEARCHOS_ROOT / "05_研究结果/canonical_index.json").read_bytes()
+    )
+    decisions: dict[str, dict[str, Any]] = {}
+    for canonical_key, pointer in canonical_index.get("pointers", {}).items():
+        output_id = str(pointer.get("current_research_output_id") or "")
+        decision = payload["decisions"].get(output_id)
+        if not isinstance(decision, dict):
+            raise SnapshotError(f"canonical output 没有正式发布授权：{output_id}")
+        bindings = decision.get("source_bindings") or {}
+        if (
+            decision.get("research_output_id") != output_id
+            or decision.get("canonical_key") != canonical_key
+            or decision.get("revision_seq") != pointer.get("revision_seq")
+            or decision.get("effective_visibility") != "publishable"
+            or decision.get("publication_scope") != "public_web_snapshot"
+            or decision.get("status") != "active"
+            or decision.get("user_confirmation") != "explicit"
+            or bindings.get("canonical_index_sha256") != canonical_sha
+        ):
+            raise SnapshotError(f"正式发布授权身份、状态或 canonical 绑定无效：{output_id}")
+        accepted_path = RESEARCHOS_ROOT / str(bindings.get("accepted_path") or "")
+        findings_path = RESEARCHOS_ROOT / str(bindings.get("findings_path") or "")
+        if (
+            not accepted_path.is_file()
+            or sha256_bytes(accepted_path.read_bytes()) != bindings.get("accepted_sha256")
+            or not findings_path.is_file()
+            or sha256_bytes(findings_path.read_bytes()) != bindings.get("findings_sha256")
+        ):
+            raise SnapshotError(f"正式发布授权 source binding 已失效：{output_id}")
+        decisions[output_id] = decision
+    return decisions
 
 
 def build_snapshot() -> dict[str, Any]:
@@ -106,6 +154,11 @@ def build_snapshot() -> dict[str, Any]:
         raise SnapshotError("source manifest 出现 staging / Dry Run")
 
     canonical_index = console.read_json(RESEARCHOS_ROOT / "05_研究结果/canonical_index.json")
+    decisions = publication_decisions(canonical_index)
+    source_manifest[str(PUBLICATION_DECISIONS_PATH.relative_to(RESEARCHOS_ROOT))] = {
+        "sha256": sha256_bytes(PUBLICATION_DECISIONS_PATH.read_bytes()),
+        "size_bytes": PUBLICATION_DECISIONS_PATH.stat().st_size,
+    }
     canonical_ids = {
         str(pointer.get("current_research_output_id") or "")
         for pointer in canonical_index.get("pointers", {}).values()
@@ -118,9 +171,10 @@ def build_snapshot() -> dict[str, Any]:
         for output in company.get("outputs", []):
             output_id = str(output.get("research_output_id") or "")
             rendered_ids.add(output_id)
-            visibility = str(output.get("visibility") or "")
-            if visibility not in ALLOWED_VISIBILITIES or output.get("publishable") is not False:
-                raise SnapshotError(f"visibility 不满足 Private Preview 安全边界：{output_id}")
+            if output_id not in decisions:
+                raise SnapshotError(f"visibility 没有正式 publishable 授权：{output_id}")
+            if output.get("visibility") != "internal_only" or output.get("publishable") is not False:
+                raise SnapshotError(f"immutable source visibility 边界异常：{output_id}")
 
         if not company.get("has_canonical"):
             continue
@@ -128,6 +182,7 @@ def build_snapshot() -> dict[str, Any]:
         if not outputs:
             raise SnapshotError(f"公司标记有 canonical 但 output 为空：{company_id}")
         output = outputs[0]
+        output_id = str(output.get("research_output_id") or "")
         document = console.render_company(company, output)
         company_pages[company_id] = {
             "company_id": company_id,
@@ -135,7 +190,8 @@ def build_snapshot() -> dict[str, Any]:
             "ticker": company.get("ticker"),
             "research_output_id": output.get("research_output_id"),
             "revision": output.get("revision"),
-            "visibility": output.get("visibility"),
+            "visibility": decisions[output_id]["effective_visibility"],
+            "publication_decision_id": decisions[output_id]["decision_id"],
             "html": extract_main(document),
             "page_data": extract_page_data(document),
         }
@@ -161,11 +217,14 @@ def build_snapshot() -> dict[str, Any]:
         "authoritative": False,
         "production_mutation": False,
         "truth_source": "Local ResearchOS production remains the sole truth source and writer",
-        "access_intent": "owner_only_private_preview",
+        "access_intent": "public_github_pages",
         "source_console_version": console.VERSION,
         "canonical_index_updated_at": model.get("canonical_index_updated_at"),
         "source_manifest": source_manifest,
-        "summary": model.get("summary"),
+        "summary": {
+            **model.get("summary", {}),
+            "visibility_counts": {"publishable": len(company_pages)},
+        },
         "home_html": extract_main(console.render_home(model)),
         "company_pages": company_pages,
     }
@@ -180,7 +239,7 @@ def verify_snapshot(payload: dict[str, Any]) -> None:
         raise SnapshotError("snapshot 派生属性无效")
     if payload.get("production_mutation") is not False:
         raise SnapshotError("snapshot 错误标记了 production mutation")
-    if payload.get("access_intent") != "owner_only_private_preview":
+    if payload.get("access_intent") != "public_github_pages":
         raise SnapshotError("snapshot access intent 无效")
     expected = payload.get("snapshot_content_sha256")
     content = dict(payload)
@@ -216,7 +275,7 @@ def export() -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="生成 Research Console 私密 Web Snapshot")
+    parser = argparse.ArgumentParser(description="生成 Research Console 公开只读 Web Snapshot")
     parser.add_argument("--verify", action="store_true", help="验证已生成 snapshot")
     args = parser.parse_args()
     try:

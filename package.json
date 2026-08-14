@@ -11,8 +11,10 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "snapshot:export": "python3 scripts/export_snapshot.py",
     "snapshot:verify": "python3 scripts/export_snapshot.py --verify",
+    "pages:export": "python3 scripts/export_github_pages.py",
+    "pages:verify": "python3 scripts/export_github_pages.py --verify",
     "test": "node --test tests/rendered-html.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern public/snapshot-app.js"
   },
   "dependencies": {
     "react": "19.2.6",
