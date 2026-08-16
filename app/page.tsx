@@ -15,7 +15,6 @@ type CompanyPage = {
   target_period?: string;
   financial_period_count: number;
   metric_count: number;
-  scope_label?: string;
 };
 
 export default function Home() {
@@ -28,7 +27,7 @@ export default function Home() {
         <div>
           <p className="eyebrow">云见财报 ResearchOS</p>
           <h1>财报预报与公司财务数据</h1>
-          <p>查看即将发布的财报，也可按公司浏览历史指标、同比环比、单位口径与数据来源。</p>
+          <p>查看即将发布的财报，也可按公司浏览历史指标、同比环比与数据覆盖。</p>
           <div className="hero-actions">
             <Link className="button-link" href="/earnings">查看财报预报</Link>
             <a className="text-link" href="#companies">浏览公司数据</a>
@@ -64,8 +63,7 @@ export default function Home() {
               <div><small>历史期间</small><strong>{company.financial_period_count}</strong></div>
               <div><small>数据指标</small><strong>{company.metric_count}</strong></div>
             </div>
-            <p className="coverage-line">{company.scope_label || "合并口径"}</p>
-            <div className="card-footer"><span className="visibility">只读数据</span><span className="arrow">查看数据 →</span></div>
+            <div className="card-footer single"><span className="arrow">查看数据 →</span></div>
           </Link>
         ))}
       </section>

@@ -39,7 +39,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <Link href="/earnings">财报预报</Link>
             <Link href="/">公司 / 财报数据</Link>
           </nav>
-          <div className="readonly-badge">只读数据</div>
         </header>
         {children}
         <footer>

@@ -685,7 +685,6 @@ def build_snapshot() -> dict[str, Any]:
             "target_period": latest.get("period"),
             "financial_period_count": len(periods),
             "metric_count": len(series),
-            "scope_label": "business / geography / product 独立保存",
             "html": render_company_page(company, series),
             "page_data": {"financial_series": series},
         }

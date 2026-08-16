@@ -50,17 +50,6 @@ body {
   border-radius: 9px;
 }
 
-.readonly-badge,
-.visibility {
-  background: #f4f1ff;
-  border-color: #d9d0ff;
-  color: #6332ff;
-}
-
-.topbar .readonly-badge::before {
-  background: #6332ff;
-}
-
 main {
   padding-top: 42px;
 }

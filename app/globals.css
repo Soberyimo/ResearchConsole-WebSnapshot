@@ -112,6 +112,10 @@ body {
   color: #216444;
 }
 
+.card-footer.single {
+  justify-content: flex-end;
+}
+
 @media (max-width: 760px) {
   .topbar {
     height: auto;
@@ -130,10 +134,6 @@ body {
   .primary-nav a {
     flex: 1;
     text-align: center;
-  }
-
-  .topbar .readonly-badge {
-    display: none;
   }
 
   .hero h1 {

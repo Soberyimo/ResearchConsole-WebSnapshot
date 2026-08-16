@@ -55,7 +55,6 @@ def shell(title: str, body: str, page_data: dict[str, Any] | None = None) -> str
   <header class="topbar">
     <a class="brand" href="/"><span class="brand-mark">云见</span><span><strong>云见财报</strong><small>财报数据平台 · 只读</small></span></a>
     <nav class="primary-nav" aria-label="一级功能"><a href="/earnings/">财报预报</a><a href="/">公司 / 财报数据</a></nav>
-    <div class="readonly-badge">只读数据</div>
   </header>
   <main>{body}</main>
   <footer><span>派生快照 · ResearchOS production 仍是唯一事实源</span><span>财报预报与财务数据 · 无写回能力</span></footer>
@@ -98,8 +97,7 @@ def home_body(payload: dict[str, Any]) -> str:
             f'<div><small>最新财报期</small><strong>{e(company.get("target_period") or "—")}</strong></div>'
             f'<div><small>历史期间</small><strong>{company.get("financial_period_count", 0)}</strong></div>'
             f'<div><small>数据指标</small><strong>{company.get("metric_count", 0)}</strong></div></div>'
-            f'<p class="coverage-line">{e(company.get("scope_label") or "合并口径")}</p>'
-            '<div class="card-footer"><span class="visibility">只读数据</span><span class="arrow">查看数据 →</span></div></a>'
+            '<div class="card-footer single"><span class="arrow">查看数据 →</span></div></a>'
         )
     summary = payload["summary"]
     return (
@@ -221,6 +219,9 @@ def verify(output: Path) -> dict[str, Any]:
     documents = [path.read_text(encoding="utf-8") for path in required if path.suffix == ".html"]
     if any(any(term in document for term in BLOCKED_UI_TERMS) for document in documents):
         raise PagesExportError("removed research UI leaked into static artifact")
+    home = (output / "index.html").read_text(encoding="utf-8")
+    if any(term in home for term in ("business / geography / product 独立保存", "readonly-badge", ">只读数据<")):
+        raise PagesExportError("removed home-card or topbar labels leaked into static artifact")
     if any("/_next/" in document or "vinext.navigationRuntime" in document for document in documents):
         raise PagesExportError("framework runtime leaked into static artifact")
     if not all("财报数据平台 · 只读" in document for document in documents):

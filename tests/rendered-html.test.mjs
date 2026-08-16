@@ -93,6 +93,8 @@ test("home exposes only the two first-level product concepts", async () => {
   assert.match(html, /小鹏汽车/);
   assert.match(html, /宁德时代/);
   assert.match(html, /英伟达/);
+  assert.doesNotMatch(html, /business \/ geography \/ product 独立保存/);
+  assert.doesNotMatch(html, /readonly-badge|>只读数据</);
   assert.doesNotMatch(html, removedResearchTerms);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 });
