@@ -40,5 +40,5 @@ yarn-error.log*
 /work/
 /github-pages-dist/
 
-# Generated, derived snapshot data is never source code.
+# Generated, derived data-platform snapshot is never source code.
 /snapshot/*.json

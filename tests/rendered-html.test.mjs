@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
+const removedResearchTerms = /研究结论|管理层表态|研究缺口|research_output_id|finding_id|statement_id|M4 canonical/i;
 
 async function render(path = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -15,7 +16,7 @@ async function render(path = "/") {
   );
 }
 
-test("public chart keeps numeric pointer interaction", async () => {
+test("financial chart keeps numeric pointer interaction", async () => {
   const app = await readFile(new URL("public/snapshot-app.js", projectRoot), "utf8");
   const polish = await readFile(new URL("public/snapshot-polish.css", projectRoot), "utf8");
   assert.match(app, /addEventListener\('pointermove', handleChartPointer\)/);
@@ -25,66 +26,80 @@ test("public chart keeps numeric pointer interaction", async () => {
   assert.match(polish, /\.chart-hover-tooltip\.is-visible/);
 });
 
-test("snapshot contract remains derived, canonical-only, and publishable", async () => {
+test("snapshot contains only calendar and financial-data browser payloads", async () => {
   const snapshot = JSON.parse(
-    await readFile(new URL("snapshot/research_snapshot.json", projectRoot), "utf8"),
+    await readFile(new URL("snapshot/data_platform_snapshot.json", projectRoot), "utf8"),
   );
-  assert.equal(snapshot.schema_version, "ResearchConsole-WebSnapshot-0.1");
+  assert.equal(snapshot.schema_version, "ResearchOS-DataPlatformSnapshot-0.1");
   assert.equal(snapshot.derived, true);
   assert.equal(snapshot.authoritative, false);
   assert.equal(snapshot.production_mutation, false);
-  assert.equal(snapshot.access_intent, "public_github_pages");
-  assert.equal(snapshot.source_console_version, "0.1.3");
-  assert.equal(snapshot.summary.canonical_output_count, 2);
-  assert.equal(snapshot.summary.finding_count, 72);
-  assert.deepEqual(Object.keys(snapshot.company_pages).sort(), ["co_000002", "co_000004"]);
+  assert.equal(snapshot.access_intent, "public_financial_data_platform");
+  assert.equal(snapshot.summary.company_count, 6);
+  assert.equal(snapshot.summary.calendar_event_count, 5);
+  assert.deepEqual(Object.keys(snapshot.company_pages).sort(), [
+    "co_000001", "co_000002", "co_000003", "co_000004", "co_000005", "co_000006",
+  ]);
+  assert.ok(snapshot.earnings_calendar.some((event) => event.released));
+  assert.ok(snapshot.earnings_calendar.some((event) => !event.released));
   for (const page of Object.values(snapshot.company_pages)) {
-    assert.equal(page.visibility, "publishable");
-    assert.match(page.publication_decision_id, /^pubdec_[0-9a-f]{24}$/);
-    assert.match(page.research_output_id, /^ro_[0-9a-f]{24}$/);
+    assert.ok(page.page_data.financial_series.length > 0);
+    assert.doesNotMatch(page.html, removedResearchTerms);
+    assert.equal("research_output_id" in page, false);
+    assert.equal("management_statements" in page, false);
+    assert.equal("findings" in page, false);
   }
-  assert.ok(Object.keys(snapshot.source_manifest).length > 0);
-  assert.equal(
-    Object.keys(snapshot.source_manifest).some((path) => /staged|dryrun/i.test(path)),
-    false,
-  );
 });
 
-test("home renders the frozen v0.1.3 product scope", async () => {
+test("home exposes only the two first-level product concepts", async () => {
   const response = await render("/");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /结论、数据、证据，都在这里/);
+  assert.match(html, /财报预报与公司财务数据/);
+  assert.match(html, /财报预报/);
+  assert.match(html, /公司 \/ 财报数据/);
   assert.match(html, /高通/);
   assert.match(html, /小鹏汽车/);
-  assert.doesNotMatch(html, /宁德时代|理想汽车|英伟达|吉利汽车/);
-  assert.match(html, /公开快照 · 只读/);
+  assert.match(html, /宁德时代/);
+  assert.match(html, /英伟达/);
+  assert.doesNotMatch(html, removedResearchTerms);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
 });
 
-test("canonical company pages default to financial data and keep source modules", async () => {
-  for (const companyId of ["co_000004", "co_000002"]) {
+test("earnings forecast route keeps upcoming, released, time status, and source", async () => {
+  const response = await render("/earnings");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /财报发布时间表/);
+  assert.match(html, /即将发布/);
+  assert.match(html, /已发布/);
+  assert.match(html, /官方日期，时间未披露/);
+  assert.match(html, /第三方预计/);
+  assert.match(html, /公司IR|SEC/);
+  assert.doesNotMatch(html, removedResearchTerms);
+});
+
+test("company pages default to financial data and keep lineage and coverage", async () => {
+  for (const companyId of ["co_000001", "co_000002", "co_000004", "co_000006"]) {
     const response = await render(`/company/${companyId}`);
     assert.equal(response.status, 200);
     const html = await response.text();
     assert.match(html, /data-panel="financial"/);
     assert.match(html, /data-panel="financial"[^>]*active|class="panel active" data-panel="financial"/);
     assert.match(html, /财务与运营/);
-    assert.match(html, /研究结论/);
-    assert.match(html, /管理层表态/);
-    assert.match(html, /研究缺口/);
-    assert.match(html, /来源与证据/);
+    assert.match(html, /来源与口径/);
     assert.match(html, /数据覆盖/);
-    assert.match(html, /publishable/);
-    assert.doesNotMatch(html, />内部研究</);
+    assert.match(html, /同比/);
+    assert.match(html, /环比/);
     assert.match(html, /id="page-data"/);
+    assert.doesNotMatch(html, removedResearchTerms);
   }
 });
 
-test("unknown companies fail closed without borrowing another canonical output", async () => {
-  const response = await render("/company/co_000001");
+test("unknown companies return a clean data-platform 404", async () => {
+  const response = await render("/company/co_999999");
   assert.equal(response.status, 404);
   const html = await response.text();
-  assert.match(html, /尚无正式研究结果/);
-  assert.doesNotMatch(html, /ro_41c82f9d82e343d3c278968b|ro_351e8bf1f00e2875ac3fed65/);
+  assert.match(html, /暂无这家公司的财报数据/);
+  assert.doesNotMatch(html, removedResearchTerms);
 });

@@ -1,5 +1,22 @@
 # 变更记录
 
+## [Data Platform Slimdown] - 2026-08-16
+
+### Changed
+
+- 一级功能收缩为“财报预报”和“公司 / 财报数据”。
+- 公司页只保留财务趋势、历史表格、同比环比、口径、来源与数据覆盖。
+- 新增只读财报预报路由，展示即将发布、已发布、时间、状态和来源。
+
+### Removed
+
+- 研究结论、管理层表态、研究缺口、研究身份与研究发布状态的前端展示。
+
+### Data Safety
+
+- ResearchOS production mutation：NO。
+- 后端、API、数据库、M1/M2/M3 与 Briefing OS：未修改。
+
 ## [Public GitHub Pages Snapshot] - 2026-08-14
 
 ### Added

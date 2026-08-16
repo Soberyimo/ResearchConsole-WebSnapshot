@@ -12,3 +12,140 @@ body {
   background: #ffffff;
   color: #111114;
 }
+
+.primary-nav {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 18px;
+}
+
+.primary-nav a {
+  border-radius: 8px;
+  color: #52525b;
+  font-size: 0.8rem;
+  font-weight: 650;
+  padding: 9px 12px;
+  text-decoration: none;
+}
+
+.primary-nav a:hover,
+.primary-nav a:focus-visible {
+  background: #f0ecff;
+  color: #6332ff;
+}
+
+.hero-actions {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.text-link,
+.source-link {
+  color: #6332ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.card-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.forecast-heading {
+  align-items: end;
+  margin-bottom: 42px;
+}
+
+.forecast-heading h1 {
+  font-family: Georgia, "Songti SC", serif;
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.calendar-section + .calendar-section {
+  margin-top: 58px;
+}
+
+.earnings-table {
+  background: var(--paper, #fff);
+  border: 1px solid var(--line, #e5e5eb);
+  border-radius: 12px;
+}
+
+.earnings-table table {
+  min-width: 960px;
+}
+
+.earnings-table td strong,
+.earnings-table td small {
+  display: block;
+}
+
+.earnings-table td small {
+  color: var(--muted, #71717a);
+  font-size: 0.68rem;
+  margin-top: 5px;
+}
+
+.event-status {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.event-status.upcoming {
+  background: #f0ecff;
+  color: #4f22dc;
+}
+
+.event-status.released {
+  background: #e9f5ee;
+  color: #216444;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    height: auto;
+    min-height: 76px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+  }
+
+  .primary-nav {
+    gap: 2px;
+    margin: 0;
+    order: 3;
+    width: 100%;
+  }
+
+  .primary-nav a {
+    flex: 1;
+    text-align: center;
+  }
+
+  .topbar .readonly-badge {
+    display: none;
+  }
+
+  .hero h1 {
+    white-space: normal;
+  }
+
+  .hero-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .forecast-heading {
+    align-items: flex-start;
+  }
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import snapshot from "../../../snapshot/research_snapshot.json";
+import snapshot from "../../../snapshot/data_platform_snapshot.json";
 
 type CompanyPageData = {
   company_id: string;
@@ -20,7 +20,9 @@ function getPage(companyId: string): CompanyPageData | undefined {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { companyId } = await params;
   const page = getPage(companyId);
-  return page ? { title: page.company } : { title: "尚无正式研究结果" };
+  return page
+    ? { title: `${page.company}财报数据`, description: `查看${page.company}历史财务指标、同比环比、口径与来源。` }
+    : { title: "暂无公司数据" };
 }
 
 export default async function CompanyPage({ params }: PageProps) {

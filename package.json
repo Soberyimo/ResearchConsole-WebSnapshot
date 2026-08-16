@@ -1,5 +1,5 @@
 {
-  "name": "research-console-web-snapshot",
+  "name": "researchos-data-platform-web",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -14,7 +14,7 @@
     "pages:export": "python3 scripts/export_github_pages.py",
     "pages:verify": "python3 scripts/export_github_pages.py --verify",
     "test": "node --test tests/rendered-html.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern public/snapshot-app.js"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern github-pages-dist --ignore-pattern public/snapshot-app.js"
   },
   "dependencies": {
     "react": "19.2.6",
