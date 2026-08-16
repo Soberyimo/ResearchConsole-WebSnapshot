@@ -11,6 +11,31 @@
   --shadow: 0 14px 38px rgba(27, 24, 45, 0.07);
 }
 
+.chart-shell {
+  position: relative;
+}
+
+.chart-hover-tooltip {
+  background: #17131f;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(27, 24, 45, 0.2);
+  color: #fff;
+  display: none;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  max-width: 280px;
+  padding: 8px 11px;
+  pointer-events: none;
+  position: absolute;
+  white-space: pre-line;
+  z-index: 4;
+}
+
+.chart-hover-tooltip.is-visible {
+  display: block;
+}
+
 body {
   background: var(--bg);
 }

@@ -15,6 +15,16 @@ async function render(path = "/") {
   );
 }
 
+test("public chart keeps numeric pointer interaction", async () => {
+  const app = await readFile(new URL("public/snapshot-app.js", projectRoot), "utf8");
+  const polish = await readFile(new URL("public/snapshot-polish.css", projectRoot), "utf8");
+  assert.match(app, /addEventListener\('pointermove', handleChartPointer\)/);
+  assert.match(app, /addEventListener\('pointerdown', handleChartPointer\)/);
+  assert.match(app, /formatValue\(point\.value, activeSeries\.unit\)/);
+  assert.match(app, /chart-hover-tooltip/);
+  assert.match(polish, /\.chart-hover-tooltip\.is-visible/);
+});
+
 test("snapshot contract remains derived, canonical-only, and publishable", async () => {
   const snapshot = JSON.parse(
     await readFile(new URL("snapshot/research_snapshot.json", projectRoot), "utf8"),
