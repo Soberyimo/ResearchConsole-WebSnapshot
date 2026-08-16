@@ -36,14 +36,19 @@ test("snapshot contains only calendar and financial-data browser payloads", asyn
   assert.equal(snapshot.production_mutation, false);
   assert.equal(snapshot.access_intent, "public_financial_data_platform");
   assert.equal(snapshot.summary.company_count, 6);
-  assert.equal(snapshot.summary.calendar_event_count, 5);
+  assert.equal(snapshot.summary.calendar_event_count, 6);
   assert.deepEqual(Object.keys(snapshot.company_pages).sort(), [
     "co_000001", "co_000002", "co_000003", "co_000004", "co_000005", "co_000006",
   ]);
   assert.ok(snapshot.earnings_calendar.some((event) => event.released));
   assert.ok(snapshot.earnings_calendar.some((event) => !event.released));
+  assert.ok(snapshot.earnings_calendar.some((event) =>
+    event.company_id === "co_000006" && event.period === "2026H1" && event.official_appointment_date === "2026-08-17"
+  ));
   for (const page of Object.values(snapshot.company_pages)) {
     assert.ok(page.page_data.financial_series.length > 0);
+    const labels = page.page_data.financial_series.map((series) => series.label);
+    assert.equal(new Set(labels).size, labels.length);
     assert.doesNotMatch(page.html, removedResearchTerms);
     assert.equal("research_output_id" in page, false);
     assert.equal("management_statements" in page, false);
@@ -76,10 +81,13 @@ test("earnings forecast route keeps upcoming, released, time status, and source"
   assert.match(html, /官方日期，时间未披露/);
   assert.match(html, /第三方预计/);
   assert.match(html, /公司IR|SEC/);
+  assert.match(html, /吉利汽车控股有限公司/);
+  assert.match(html, /2026-08-17（官方日期，时间未披露）/);
+  assert.match(html, /吉利汽车公告/);
   assert.doesNotMatch(html, removedResearchTerms);
 });
 
-test("company pages default to financial data and keep lineage and coverage", async () => {
+test("company pages default to financial data without a source-and-basis tab", async () => {
   for (const companyId of ["co_000001", "co_000002", "co_000004", "co_000006"]) {
     const response = await render(`/company/${companyId}`);
     assert.equal(response.status, 200);
@@ -87,13 +95,23 @@ test("company pages default to financial data and keep lineage and coverage", as
     assert.match(html, /data-panel="financial"/);
     assert.match(html, /data-panel="financial"[^>]*active|class="panel active" data-panel="financial"/);
     assert.match(html, /财务与运营/);
-    assert.match(html, /来源与口径/);
     assert.match(html, /数据覆盖/);
     assert.match(html, /同比/);
     assert.match(html, /环比/);
     assert.match(html, /id="page-data"/);
+    assert.doesNotMatch(html, /来源与口径|口径与来源|data-panel="sources"/);
     assert.doesNotMatch(html, removedResearchTerms);
   }
+});
+
+test("trend selector labels distinguish period and accounting basis", async () => {
+  const response = await render("/company/co_000006");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /净利润（单季 · HKFRS归母）/);
+  assert.match(html, /净利润（上半年累计 · HKFRS归母）/);
+  assert.match(html, /整车交付量（全年 · 公司运营口径）/);
+  assert.doesNotMatch(html, /<option[^>]*>净利润<\/option>/);
 });
 
 test("unknown companies return a clean data-platform 404", async () => {

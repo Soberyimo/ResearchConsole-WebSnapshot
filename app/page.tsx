@@ -4,7 +4,7 @@ import snapshot from "../snapshot/data_platform_snapshot.json";
 
 export const metadata: Metadata = {
   title: "公司财报数据",
-  description: "浏览公司财务指标、历史期间、同比环比、口径与来源。",
+  description: "浏览公司财务指标、历史期间、同比环比和数据覆盖。",
 };
 
 type CompanyPage = {

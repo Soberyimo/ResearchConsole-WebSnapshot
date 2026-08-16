@@ -6,7 +6,7 @@
 
 - `app/page.tsx`：公司入口与数据概览。
 - `app/earnings/page.tsx`：财报预报、即将发布、已发布、时间、状态和来源。
-- `app/company/[companyId]/page.tsx`：财务与运营趋势、历史表格、同比环比、单位、币种、口径、程序计算、lineage 和数据覆盖。
+- `app/company/[companyId]/page.tsx`：财务与运营趋势、历史表格、同比环比、单位、币种、程序计算和数据覆盖；不再提供单独的“来源与口径”页面。
 - `public/snapshot-app.js`：财务趋势图交互。
 - `public/snapshot-styles.css`、`public/snapshot-polish.css`、`app/globals.css`：共享布局与数据展示样式。
 
@@ -26,5 +26,5 @@
 
 ## BACKEND_CLEANUP_REQUIRED
 
-- 无。Web Snapshot 已直接只读 M1/M3 正式数据，不需要修改后端、API 或共享 canonical 配置。
+- `01_财报日历/财报日历.xlsx` 的 `财报日历` 工作表缺少吉利汽车 `2026H1` 事件。前端暂由 `frontend_data/earnings_calendar_supplements.json` 根据吉利汽车 2026-07-10《DATE OF BOARD MEETING》官方公告补充 `2026-08-17`，未写入或修改正式日历。M1 后续应按标准流程补录，补录后前端会以正式日历为优先并自动忽略同公司同财报期的补充事件。
 - M4、管理层表态和历史研究数据的物理清理由后端任务另行决定，不影响本轮前端瘦身，也未在本轮删除。

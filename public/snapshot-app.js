@@ -11,14 +11,6 @@
   const initial = location.hash.slice(1);
   if (tabs.some((tab) => tab.dataset.tab === initial)) activate(initial);
 
-  const filter = document.querySelector('#source-filter');
-  if (filter) filter.addEventListener('input', () => {
-    const query = filter.value.trim().toLowerCase();
-    document.querySelectorAll('[data-source-row]').forEach((row) => {
-      row.hidden = query && !row.textContent.toLowerCase().includes(query);
-    });
-  });
-
   const dataNode = document.querySelector('#page-data');
   const chart = document.querySelector('#trend-chart');
   const selector = document.querySelector('#chart-series');

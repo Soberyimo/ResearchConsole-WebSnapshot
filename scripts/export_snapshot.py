@@ -21,6 +21,7 @@ PROJECT_DIR = Path(__file__).resolve().parents[1]
 RESEARCHOS_ROOT = PROJECT_DIR.parent
 SNAPSHOT_PATH = PROJECT_DIR / "snapshot/data_platform_snapshot.json"
 PUBLIC_DIR = PROJECT_DIR / "public"
+CALENDAR_SUPPLEMENTS_PATH = PROJECT_DIR / "frontend_data/earnings_calendar_supplements.json"
 SNAPSHOT_SCHEMA = "ResearchOS-DataPlatformSnapshot-0.1"
 BLOCKED_BROWSER_TERMS = (
     'data-panel="conclusions"',
@@ -170,6 +171,48 @@ def series_identity(row: dict[str, Any]) -> tuple[str, ...]:
     )
 
 
+PERIOD_TYPE_LABELS = {
+    "quarter": "单季",
+    "ytd_6m": "上半年累计",
+    "ytd_9m": "前三季度累计",
+    "fy": "全年",
+    "point_in_time": "期末",
+}
+
+BASIS_LABELS = {
+    "PRC_GAAP": "中国会计准则",
+    "PRC_GAAP_attributable_to_parent": "中国会计准则归母",
+    "HKFRS_attributable_to_parent": "HKFRS归母",
+    "company_operating_metric": "公司运营口径",
+}
+
+
+def disambiguate_series_labels(series: list[dict[str, Any]]) -> None:
+    by_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for item in series:
+        by_label[item["label"]].append(item)
+    for base_label, duplicates in by_label.items():
+        if len(duplicates) < 2:
+            continue
+        for item in duplicates:
+            qualifiers = [
+                PERIOD_TYPE_LABELS.get(str(item.get("period_type") or ""), str(item.get("period_type") or "未注明期间")),
+                BASIS_LABELS.get(str(item.get("basis") or ""), str(item.get("basis") or "未注明口径")),
+            ]
+            item["label"] = f'{base_label}（{" · ".join(qualifiers)}）'
+
+    by_qualified_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for item in series:
+        by_qualified_label[item["label"]].append(item)
+    for qualified_label, duplicates in by_qualified_label.items():
+        if len(duplicates) < 2:
+            continue
+        for item in duplicates:
+            periods = [str(record.get("period") or "") for record in item["records"] if record.get("period")]
+            period_range = periods[0] if len(periods) == 1 else f"{periods[0]}–{periods[-1]}"
+            item["label"] = f"{qualified_label[:-1]} · {period_range}）"
+
+
 def parse_date(value: Any) -> datetime | None:
     if not value:
         return None
@@ -302,6 +345,7 @@ def build_series(rows: list[dict[str, Any]], registry: dict[str, dict[str, Any]]
                 "definitions": [definition_view],
             }
         )
+    disambiguate_series_labels(series)
     return sorted(series, key=lambda item: (item["label"], item["basis"], item["period_type"] or ""))
 
 
@@ -363,66 +407,6 @@ def render_financial_section(series: list[dict[str, Any]]) -> str:
     )
 
 
-def build_source_rows(
-    series: list[dict[str, Any]],
-    evidence_by_record: dict[str, list[dict[str, Any]]],
-    materials: dict[str, dict[str, Any]],
-) -> list[dict[str, Any]]:
-    result = []
-    seen = set()
-    for item in series:
-        for record in item["records"]:
-            record_id = str(record.get("record_id") or "")
-            evidences = evidence_by_record.get(record_id, [])
-            if not evidences:
-                evidences = [{
-                    "evidence_id": f"derived_{record_id}",
-                    "record_id": record_id,
-                    "material_id": record.get("material_id"),
-                    "source_location": record.get("source_location"),
-                }]
-            for evidence in evidences:
-                evidence_id = str(evidence.get("evidence_id") or f"derived_{record_id}")
-                if evidence_id in seen:
-                    continue
-                seen.add(evidence_id)
-                material_id = str(evidence.get("material_id") or record.get("material_id") or "")
-                material = materials.get(material_id, {})
-                result.append({
-                    "evidence_id": evidence_id,
-                    "record_id": record_id,
-                    "material_id": material_id,
-                    "material_title": evidence.get("来源文件") or material.get("原始标题"),
-                    "source_location": evidence.get("source_location") or record.get("source_location"),
-                    "source_url": evidence.get("原始URL") or material.get("原始URL"),
-                    "formula_id": record.get("formula_id"),
-                    "input_record_ids": record.get("input_record_ids"),
-                })
-    return result
-
-
-def render_sources_section(sources: list[dict[str, Any]]) -> str:
-    rows = []
-    for source in sources:
-        title = e(source.get("material_title") or "程序计算记录")
-        if source.get("source_url"):
-            title = f'<a class="source-link" href="{e(source["source_url"])}" target="_blank" rel="noreferrer">{title}</a>'
-        formula = "—"
-        if source.get("formula_id"):
-            formula = f'<code>{e(source["formula_id"])}</code><small>{e(source.get("input_record_ids"))}</small>'
-        rows.append(
-            f'<tr data-source-row><td><code>{e(source.get("record_id"))}</code><small>{e(source.get("evidence_id"))}</small></td>'
-            f'<td><code>{e(source.get("material_id"))}</code><small>{title}</small></td>'
-            f'<td>{e(source.get("source_location"))}</td><td>{formula}</td></tr>'
-        )
-    return (
-        '<section class="panel" data-panel="sources"><div class="section-heading compact"><div><p class="eyebrow">数据追溯</p><h2>来源与口径</h2></div>'
-        f'<p>{len(sources)} 个数据来源</p></div><label class="source-search">筛选来源<input id="source-filter" type="search" placeholder="记录编号 / 材料编号 / 来源位置"></label>'
-        '<div class="table-scroll source-table"><table><thead><tr><th>数据记录</th><th>正式材料</th><th>来源位置</th><th>程序计算</th></tr></thead>'
-        f'<tbody>{"".join(rows)}</tbody></table></div></section>'
-    )
-
-
 def render_coverage_section(series: list[dict[str, Any]]) -> str:
     periods = {record.get("period") for item in series for record in item["records"] if record.get("period")}
     records = [record for item in series for record in item["records"]]
@@ -443,13 +427,12 @@ def render_coverage_section(series: list[dict[str, Any]]) -> str:
     )
 
 
-def render_company_page(company: dict[str, Any], series: list[dict[str, Any]], sources: list[dict[str, Any]]) -> str:
+def render_company_page(company: dict[str, Any], series: list[dict[str, Any]]) -> str:
     all_records = [record for item in series for record in item["records"]]
     latest = max(all_records, key=lambda row: (str(row.get("period_end_date") or ""), str(row.get("period") or "")))
     period_count = len({record.get("period") for record in all_records if record.get("period")})
     tabs = (
         ("financial", "财务与运营", len(series)),
-        ("sources", "来源与口径", len(sources)),
         ("coverage", "数据覆盖", period_count),
     )
     tab_html = "".join(
@@ -465,7 +448,7 @@ def render_company_page(company: dict[str, Any], series: list[dict[str, Any]], s
         f'<span><small>历史期间</small><strong>{period_count}</strong></span><span><small>数据指标</small><strong>{len(series)}</strong></span>'
         '<span class="internal-status">只读数据</span></section>'
         f'<nav class="tabs" aria-label="公司财报数据模块">{tab_html}</nav>'
-        f'{render_financial_section(series)}{render_sources_section(sources)}{render_coverage_section(series)}'
+        f'{render_financial_section(series)}{render_coverage_section(series)}'
     )
     if any(term in body for term in BLOCKED_BROWSER_TERMS):
         raise SnapshotError(f"公司数据页面仍包含研究模块：{company.get('company_id')}")
@@ -507,6 +490,48 @@ def normalize_calendar() -> list[dict[str, Any]]:
             "last_checked_at": row.get("最后核查时间"),
             "sort_at": actual or planned or appointment or estimate or "9999-12-31T00:00:00",
         })
+    if not CALENDAR_SUPPLEMENTS_PATH.is_file():
+        raise SnapshotError("前端财报预报补充文件缺失")
+    supplements = json.loads(CALENDAR_SUPPLEMENTS_PATH.read_text(encoding="utf-8"))
+    if not isinstance(supplements, list):
+        raise SnapshotError("前端财报预报补充文件格式无效")
+    seen_events = {(str(row.get("company_id")), str(row.get("period"))) for row in normalized}
+    for row in supplements:
+        required = ("event_id", "company_id", "company", "period", "official_appointment_date", "source_url", "event_basis")
+        if not isinstance(row, dict) or any(not row.get(key) for key in required):
+            raise SnapshotError("前端财报预报补充事件字段不完整")
+        event_key = (str(row["company_id"]), str(row["period"]))
+        if event_key in seen_events:
+            continue
+        if not str(row["source_url"]).startswith("https://"):
+            raise SnapshotError(f"前端财报预报补充事件来源无效：{row['event_id']}")
+        appointment = str(row["official_appointment_date"])
+        normalized.append({
+            "company_id": row["company_id"],
+            "company": row["company"],
+            "ticker": row.get("ticker"),
+            "market": row.get("market"),
+            "period": row["period"],
+            "report_type": row.get("report_type") or "财报",
+            "status": row.get("status") or "已确认",
+            "released": False,
+            "official_appointment_date": appointment,
+            "planned_release_original": None,
+            "planned_release_timezone": None,
+            "planned_release_beijing": None,
+            "actual_release_original": None,
+            "actual_release_timezone": None,
+            "actual_release_beijing": None,
+            "estimated_date": None,
+            "call_time_beijing": None,
+            "source_name": row.get("source_name") or "公司公告",
+            "source_url": row["source_url"],
+            "last_checked_at": row.get("last_checked_at"),
+            "event_basis": row["event_basis"],
+            "frontend_supplement": True,
+            "sort_at": appointment,
+        })
+        seen_events.add(event_key)
     return sorted(normalized, key=lambda row: (row["released"], row["sort_at"], row.get("company") or ""))
 
 
@@ -523,15 +548,6 @@ def build_snapshot() -> dict[str, Any]:
         row for row in read_sheet("04_公司数据库/财报历史数据库.xlsx", "历史数据")
         if row.get("record_id") and current_row(row)
     ]
-    evidence_by_record: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for row in read_sheet("04_公司数据库/财报历史数据库.xlsx", "来源证据"):
-        if row.get("record_id"):
-            evidence_by_record[str(row["record_id"])].append(row)
-    materials = {
-        str(row["material_id"]): row
-        for row in read_sheet("02_原始财报/财报材料索引.xlsx", "财报材料索引")
-        if row.get("material_id")
-    }
     rows_by_company: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in financial_rows:
         if row.get("company_id"):
@@ -542,7 +558,6 @@ def build_snapshot() -> dict[str, Any]:
         series = build_series(rows_by_company.get(company_id, []), registry)
         if not series:
             continue
-        sources = build_source_rows(series, evidence_by_record, materials)
         all_records = [record for item in series for record in item["records"]]
         latest = max(all_records, key=lambda row: (str(row.get("period_end_date") or ""), str(row.get("period") or "")))
         periods = {record.get("period") for record in all_records if record.get("period")}
@@ -555,7 +570,7 @@ def build_snapshot() -> dict[str, Any]:
             "financial_period_count": len(periods),
             "metric_count": len(series),
             "scope_label": "business / geography / product 独立保存",
-            "html": render_company_page(company, series, sources),
+            "html": render_company_page(company, series),
             "page_data": {"financial_series": series},
         }
     if not company_pages:

@@ -104,7 +104,7 @@ def home_body(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     return (
         '<section class="hero"><div><p class="eyebrow">云见财报 ResearchOS</p><h1>财报预报与公司财务数据</h1>'
-        '<p>查看即将发布的财报，也可按公司浏览历史指标、同比环比、单位口径与数据来源。</p>'
+        '<p>查看即将发布的财报，也可按公司浏览历史指标、同比环比与数据覆盖。</p>'
         '<div class="hero-actions"><a class="button-link" href="/earnings/">查看财报预报</a><a class="text-link" href="#companies">浏览公司数据</a></div></div></section>'
         f'<section class="summary-strip"><div><small>数据公司</small><strong>{summary["company_count"]}</strong></div>'
         f'<div><small>即将发布</small><strong>{summary["upcoming_event_count"]}</strong></div>'

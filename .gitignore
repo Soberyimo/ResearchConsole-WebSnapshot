@@ -39,6 +39,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/tmp/
 /github-pages-dist/
 
 # Generated, derived data-platform snapshot is never source code.
