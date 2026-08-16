@@ -35,6 +35,8 @@ test("snapshot contains only calendar and financial-data browser payloads", asyn
   assert.equal(snapshot.authoritative, false);
   assert.equal(snapshot.production_mutation, false);
   assert.equal(snapshot.access_intent, "public_financial_data_platform");
+  assert.ok(snapshot.frontend_input_manifest["frontend_data/earnings_calendar_supplements.json"]);
+  assert.ok(snapshot.frontend_input_manifest["frontend_data/calendar_coverage_reviews.json"]);
   assert.equal(snapshot.summary.company_count, 6);
   assert.equal(snapshot.summary.calendar_event_count, 6);
   assert.deepEqual(Object.keys(snapshot.company_pages).sort(), [
@@ -49,11 +51,35 @@ test("snapshot contains only calendar and financial-data browser payloads", asyn
     assert.ok(page.page_data.financial_series.length > 0);
     const labels = page.page_data.financial_series.map((series) => series.label);
     assert.equal(new Set(labels).size, labels.length);
+    const groups = Map.groupBy(page.page_data.financial_series, (series) => series.base_label);
+    for (const duplicateSeries of groups.values()) {
+      if (duplicateSeries.length < 2) continue;
+      for (const series of duplicateSeries) {
+        assert.match(series.label, /（.+ · .+）/);
+      }
+    }
     assert.doesNotMatch(page.html, removedResearchTerms);
     assert.equal("research_output_id" in page, false);
     assert.equal("management_statements" in page, false);
     assert.equal("findings" in page, false);
   }
+});
+
+test("calendar coverage gate tracks every company with an event or current review", async () => {
+  const snapshot = JSON.parse(
+    await readFile(new URL("snapshot/data_platform_snapshot.json", projectRoot), "utf8"),
+  );
+  const reviews = JSON.parse(
+    await readFile(new URL("frontend_data/calendar_coverage_reviews.json", projectRoot), "utf8"),
+  );
+  const companiesWithUpcomingEvents = new Set(
+    snapshot.earnings_calendar.filter((event) => !event.released).map((event) => event.company_id),
+  );
+  const reviewedCompanies = new Set(reviews.map((review) => review.company_id));
+  for (const companyId of Object.keys(snapshot.company_pages)) {
+    assert.ok(companiesWithUpcomingEvents.has(companyId) || reviewedCompanies.has(companyId));
+  }
+  assert.ok(reviews.every((review) => review.status === "needs_m1_review"));
 });
 
 test("home exposes only the two first-level product concepts", async () => {

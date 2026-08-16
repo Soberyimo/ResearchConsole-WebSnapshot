@@ -13,7 +13,7 @@
     "snapshot:verify": "python3 scripts/export_snapshot.py --verify",
     "pages:export": "python3 scripts/export_github_pages.py",
     "pages:verify": "python3 scripts/export_github_pages.py --verify",
-    "test": "node --test tests/rendered-html.test.mjs",
+    "test": "node --test tests/rendered-html.test.mjs && python3 -m unittest tests/frontend_rules_test.py",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern github-pages-dist --ignore-pattern public/snapshot-app.js"
   },
   "dependencies": {

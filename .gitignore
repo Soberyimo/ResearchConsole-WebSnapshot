@@ -22,6 +22,8 @@
 .DS_Store
 *.pem
 *.tsbuildinfo
+__pycache__/
+*.pyc
 
 # debug
 npm-debug.log*

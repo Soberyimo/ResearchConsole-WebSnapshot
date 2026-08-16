@@ -1,0 +1,12 @@
+[
+  {
+    "company_id": "co_000001",
+    "company": "宁德时代",
+    "status": "needs_m1_review",
+    "reviewed_at": "2026-08-16",
+    "valid_until": "2026-08-18",
+    "source_name": "巨潮资讯",
+    "source_url": "https://www.cninfo.com.cn/new/disclosure/stock?stockCode=300750&orgId=9900035313",
+    "note": "正式财报日历暂无下一次事件；本记录仅允许短期发布，过期前必须由 M1 补录事件或重新核查。"
+  }
+]

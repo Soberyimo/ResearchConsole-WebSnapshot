@@ -22,6 +22,7 @@ RESEARCHOS_ROOT = PROJECT_DIR.parent
 SNAPSHOT_PATH = PROJECT_DIR / "snapshot/data_platform_snapshot.json"
 PUBLIC_DIR = PROJECT_DIR / "public"
 CALENDAR_SUPPLEMENTS_PATH = PROJECT_DIR / "frontend_data/earnings_calendar_supplements.json"
+CALENDAR_COVERAGE_REVIEWS_PATH = PROJECT_DIR / "frontend_data/calendar_coverage_reviews.json"
 SNAPSHOT_SCHEMA = "ResearchOS-DataPlatformSnapshot-0.1"
 BLOCKED_BROWSER_TERMS = (
     'data-panel="conclusions"',
@@ -118,6 +119,28 @@ def source_manifest() -> dict[str, dict[str, Any]]:
             raise SnapshotError(f"数据平台正式来源缺失：{relative}")
         manifest[relative] = {"sha256": sha256_file(path), "size_bytes": path.stat().st_size}
     return manifest
+
+
+def frontend_input_manifest() -> dict[str, dict[str, Any]]:
+    paths = (CALENDAR_SUPPLEMENTS_PATH, CALENDAR_COVERAGE_REVIEWS_PATH)
+    manifest = {}
+    for path in paths:
+        if not path.is_file():
+            raise SnapshotError(f"前端数据规则文件缺失：{path.relative_to(PROJECT_DIR)}")
+        relative = str(path.relative_to(PROJECT_DIR))
+        manifest[relative] = {"sha256": sha256_file(path), "size_bytes": path.stat().st_size}
+    return manifest
+
+
+def verify_file_manifest(manifest: Any, root: Path, label: str) -> None:
+    if not isinstance(manifest, dict) or not manifest:
+        raise SnapshotError(f"{label} manifest 无效")
+    for relative, expected in manifest.items():
+        path = root / relative
+        if not path.is_file():
+            raise SnapshotError(f"{label}文件缺失：{relative}")
+        if expected.get("sha256") != sha256_file(path) or expected.get("size_bytes") != path.stat().st_size:
+            raise SnapshotError(f"{label}已变化，必须重新生成快照：{relative}")
 
 
 def current_row(row: dict[str, Any]) -> bool:
@@ -334,10 +357,12 @@ def build_series(rows: list[dict[str, Any]], registry: dict[str, dict[str, Any]]
             "scope_relationship": definition.get("scope_relationship") or "按独立 business / geography / product 维度保存。",
             "verification_status": definition.get("verification_status") or first.get("数据状态"),
         }
+        base_label = series_label(first)
         series.append(
             {
                 "series_id": "series_" + sha256_bytes(series_seed)[:16],
-                "label": series_label(first),
+                "base_label": base_label,
+                "label": base_label,
                 "unit": normalized_unit(first),
                 "basis": first.get("basis") or "未注明",
                 "period_type": first.get("period_type"),
@@ -347,6 +372,29 @@ def build_series(rows: list[dict[str, Any]], registry: dict[str, dict[str, Any]]
         )
     disambiguate_series_labels(series)
     return sorted(series, key=lambda item: (item["label"], item["basis"], item["period_type"] or ""))
+
+
+def verify_series_labels(company_id: str, series: list[dict[str, Any]]) -> None:
+    labels = [str(item.get("label") or "") for item in series]
+    if any(not label for label in labels):
+        raise SnapshotError(f"趋势指标缺少显示名称：{company_id}")
+    if len(labels) != len(set(labels)):
+        raise SnapshotError(f"趋势指标显示名称重复：{company_id}")
+    series_ids = [str(item.get("series_id") or "") for item in series]
+    if any(not series_id for series_id in series_ids) or len(series_ids) != len(set(series_ids)):
+        raise SnapshotError(f"趋势指标 series_id 缺失或重复：{company_id}")
+
+    by_base_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for item in series:
+        by_base_label[str(item.get("base_label") or item.get("label") or "")].append(item)
+    for base_label, duplicates in by_base_label.items():
+        if len(duplicates) < 2:
+            continue
+        for item in duplicates:
+            period_label = PERIOD_TYPE_LABELS.get(str(item.get("period_type") or ""), str(item.get("period_type") or "未注明期间"))
+            basis_label = BASIS_LABELS.get(str(item.get("basis") or ""), str(item.get("basis") or "未注明口径"))
+            if period_label not in item["label"] or basis_label not in item["label"]:
+                raise SnapshotError(f"同名趋势指标未展示期间和口径：{company_id} / {base_label}")
 
 
 def format_value(value: Any, unit: str) -> str:
@@ -535,8 +583,75 @@ def normalize_calendar() -> list[dict[str, Any]]:
     return sorted(normalized, key=lambda row: (row["released"], row["sort_at"], row.get("company") or ""))
 
 
+def load_calendar_coverage_reviews() -> list[dict[str, Any]]:
+    try:
+        payload = json.loads(CALENDAR_COVERAGE_REVIEWS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SnapshotError("财报预报覆盖复核文件缺失或格式无效") from exc
+    if not isinstance(payload, list):
+        raise SnapshotError("财报预报覆盖复核文件必须是数组")
+    return payload
+
+
+def event_date(row: dict[str, Any]) -> date | None:
+    value = (
+        row.get("planned_release_beijing")
+        or row.get("official_appointment_date")
+        or row.get("estimated_date")
+    )
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except ValueError as exc:
+        raise SnapshotError(f"财报预报事件日期无效：{row.get('company_id')} / {row.get('period')}") from exc
+
+
+def verify_calendar_coverage(company_ids: set[str], calendar: list[dict[str, Any]]) -> None:
+    today = date.today()
+    upcoming_company_ids = set()
+    for row in calendar:
+        if row.get("released"):
+            continue
+        scheduled_date = event_date(row)
+        if scheduled_date and scheduled_date < today:
+            raise SnapshotError(
+                f"未发布事件日期已过期，必须更新状态：{row.get('company_id')} / {row.get('period')} / {scheduled_date}"
+            )
+        if scheduled_date:
+            upcoming_company_ids.add(str(row.get("company_id") or ""))
+
+    active_reviews = set()
+    seen_reviews = set()
+    for row in load_calendar_coverage_reviews():
+        required = ("company_id", "company", "status", "reviewed_at", "valid_until", "source_url", "note")
+        if not isinstance(row, dict) or any(not row.get(key) for key in required):
+            raise SnapshotError("财报预报覆盖复核记录字段不完整")
+        company_id = str(row["company_id"])
+        if company_id in seen_reviews:
+            raise SnapshotError(f"财报预报覆盖复核记录重复：{company_id}")
+        seen_reviews.add(company_id)
+        if row["status"] != "needs_m1_review" or not str(row["source_url"]).startswith("https://"):
+            raise SnapshotError(f"财报预报覆盖复核记录状态或来源无效：{company_id}")
+        try:
+            reviewed_at = date.fromisoformat(str(row["reviewed_at"]))
+            valid_until = date.fromisoformat(str(row["valid_until"]))
+        except ValueError as exc:
+            raise SnapshotError(f"财报预报覆盖复核日期无效：{company_id}") from exc
+        if reviewed_at > today or valid_until < reviewed_at or (valid_until - reviewed_at).days > 7:
+            raise SnapshotError(f"财报预报覆盖复核窗口无效：{company_id}")
+        if valid_until < today:
+            raise SnapshotError(f"财报预报覆盖复核已过期：{company_id} / {valid_until}")
+        active_reviews.add(company_id)
+
+    uncovered = sorted(company_ids - upcoming_company_ids - active_reviews)
+    if uncovered:
+        raise SnapshotError(f"关注公司缺少下一次财报事件或有效复核记录：{', '.join(uncovered)}")
+
+
 def build_snapshot() -> dict[str, Any]:
     manifest = source_manifest()
+    frontend_manifest = frontend_input_manifest()
     calendar = normalize_calendar()
     registry = load_registry()
     companies = {
@@ -558,6 +673,7 @@ def build_snapshot() -> dict[str, Any]:
         series = build_series(rows_by_company.get(company_id, []), registry)
         if not series:
             continue
+        verify_series_labels(company_id, series)
         all_records = [record for item in series for record in item["records"]]
         latest = max(all_records, key=lambda row: (str(row.get("period_end_date") or ""), str(row.get("period") or "")))
         periods = {record.get("period") for record in all_records if record.get("period")}
@@ -575,9 +691,15 @@ def build_snapshot() -> dict[str, Any]:
         }
     if not company_pages:
         raise SnapshotError("数据平台没有可展示的公司财务数据")
+    verify_calendar_coverage(set(company_pages), calendar)
 
     generated_at = datetime.now().astimezone().isoformat(timespec="seconds")
-    snapshot_seed = {"schema": SNAPSHOT_SCHEMA, "company_ids": sorted(company_pages), "source_manifest": manifest}
+    snapshot_seed = {
+        "schema": SNAPSHOT_SCHEMA,
+        "company_ids": sorted(company_pages),
+        "source_manifest": manifest,
+        "frontend_input_manifest": frontend_manifest,
+    }
     payload: dict[str, Any] = {
         "schema_version": SNAPSHOT_SCHEMA,
         "snapshot_id": "dps_" + sha256_bytes(stable_json(snapshot_seed).encode("utf-8"))[:24],
@@ -588,6 +710,7 @@ def build_snapshot() -> dict[str, Any]:
         "truth_source": "Local ResearchOS production remains the sole truth source and writer",
         "access_intent": "public_financial_data_platform",
         "source_manifest": manifest,
+        "frontend_input_manifest": frontend_manifest,
         "summary": {
             "company_count": len(company_pages),
             "calendar_event_count": len(calendar),
@@ -610,6 +733,8 @@ def verify_snapshot(payload: dict[str, Any]) -> None:
         raise SnapshotError("snapshot 错误标记了 production mutation")
     if payload.get("access_intent") != "public_financial_data_platform":
         raise SnapshotError("snapshot access intent 无效")
+    verify_file_manifest(payload.get("source_manifest"), RESEARCHOS_ROOT, "正式来源")
+    verify_file_manifest(payload.get("frontend_input_manifest"), PROJECT_DIR, "前端规则输入")
     expected = payload.get("snapshot_content_sha256")
     content = dict(payload)
     content.pop("snapshot_content_sha256", None)
@@ -620,11 +745,13 @@ def verify_snapshot(payload: dict[str, Any]) -> None:
     pages = payload.get("company_pages")
     if not isinstance(pages, dict) or not pages:
         raise SnapshotError("snapshot 没有公司财务数据页面")
+    verify_calendar_coverage(set(pages), payload["earnings_calendar"])
     for company_id, page in pages.items():
         if not page.get("html") or not page.get("page_data", {}).get("financial_series"):
             raise SnapshotError(f"snapshot 公司数据页面不完整：{company_id}")
         if any(term in page["html"] for term in BLOCKED_BROWSER_TERMS):
             raise SnapshotError(f"snapshot 公司页面包含已删除的研究模块：{company_id}")
+        verify_series_labels(company_id, page["page_data"]["financial_series"])
 
 
 def export() -> dict[str, Any]:
