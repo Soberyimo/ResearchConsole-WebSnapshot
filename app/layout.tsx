@@ -35,10 +35,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <small>财报数据平台 · 只读</small>
             </span>
           </Link>
-          <nav className="primary-nav" aria-label="一级功能">
-            <Link href="/earnings">财报预报</Link>
-            <Link href="/">公司 / 财报数据</Link>
-          </nav>
         </header>
         {children}
         <footer>

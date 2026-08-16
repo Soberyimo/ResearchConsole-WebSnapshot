@@ -54,7 +54,6 @@ def shell(title: str, body: str, page_data: dict[str, Any] | None = None) -> str
 <body>
   <header class="topbar">
     <a class="brand" href="/"><span class="brand-mark">云见</span><span><strong>云见财报</strong><small>财报数据平台 · 只读</small></span></a>
-    <nav class="primary-nav" aria-label="一级功能"><a href="/earnings/">财报预报</a><a href="/">公司 / 财报数据</a></nav>
   </header>
   <main>{body}</main>
   <footer><span>派生快照 · ResearchOS production 仍是唯一事实源</span><span>财报预报与财务数据 · 无写回能力</span></footer>
@@ -220,7 +219,7 @@ def verify(output: Path) -> dict[str, Any]:
     if any(any(term in document for term in BLOCKED_UI_TERMS) for document in documents):
         raise PagesExportError("removed research UI leaked into static artifact")
     home = (output / "index.html").read_text(encoding="utf-8")
-    if any(term in home for term in ("business / geography / product 独立保存", "readonly-badge", ">只读数据<")):
+    if any(term in home for term in ("business / geography / product 独立保存", "readonly-badge", ">只读数据<", "primary-nav")):
         raise PagesExportError("removed home-card or topbar labels leaked into static artifact")
     if any("/_next/" in document or "vinext.navigationRuntime" in document for document in documents):
         raise PagesExportError("framework runtime leaked into static artifact")
