@@ -110,14 +110,24 @@ class StructuredDataTest(unittest.TestCase):
         self.assertEqual(page["record_count"], 389)
         self.assertEqual(page["verified_record_count"], 389)
         groups = page["page_data"]["series_groups"]
-        self.assertEqual(sum(len(series["records"]) for series in groups["financial"]), 165)
+        self.assertEqual(sum(len(series["records"]) for group in ("scale", "profitability", "operations") for series in groups[group]), 165)
         self.assertEqual(sum(len(series["records"]) for series in groups["company_sales"]), 110)
         self.assertEqual(sum(len(series["records"]) for series in groups["model_sales"]), 114)
-        for series in groups["financial"]:
-            self.assertNotEqual(series["period_type"], "month")
+        self.assertIn("直接看销量", page["html"])
+        self.assertIn("查看全部数据与来源", page["html"])
+        self.assertNotIn("已核实", page["html"])
         self.assertIn("A+H双上市公司", page["html"])
         self.assertIn("保证类质保成本", page["html"])
         self.assertIn("不等于问界品牌交付量", page["html"])
+
+    def test_seres_v2_gross_margin_is_displayed_without_rescaling(self):
+        records = json.loads((PROJECT_DIR / "structured_data/financial_records.json").read_text(encoding="utf-8"))
+        margin = [row for row in records if row.get("company") == "赛力斯" and row.get("period") == "2025H1" and row.get("metric") == "gross_margin"]
+        self.assertEqual(len(margin), 1)
+        self.assertEqual(margin[0]["value"], 28.93)
+        payload = build(PROJECT_DIR / "structured_data/financial_records.json")
+        self.assertIn("28.93", payload["company_pages"]["seres"]["html"])
+        self.assertNotIn("2,893", payload["company_pages"]["seres"]["html"])
 
     def test_migration_manifest_records_formula_and_spot_checks(self):
         manifest = json.loads((PROJECT_DIR / "structured_data/migration_manifest.json").read_text(encoding="utf-8"))

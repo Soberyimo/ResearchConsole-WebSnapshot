@@ -27,6 +27,17 @@
     "duplicate_period_metric_scope": 0,
     "missing_required_fields": 0,
     "periods_normalized_to_four_digit_year": true,
-    "blank_2026Q2_financial_values_excluded": true
-  }
+    "blank_2026Q2_financial_values_excluded": true,
+    "percent_values_over_100": 0
+  },
+  "corrections": [
+    {
+      "period": "2025H1",
+      "metric": "gross_margin",
+      "old_structured_value": 2893.0,
+      "correct_value": 28.93,
+      "reason": "原始Excel该单元格直接存储为28.93，而同列其他百分比多为小数格式；此前百分比标准化重复乘100。",
+      "status": "corrected"
+    }
+  ]
 }

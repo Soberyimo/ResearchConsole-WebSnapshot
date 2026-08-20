@@ -17,6 +17,7 @@
     const selector = widget.querySelector('.chart-series');
     const unitNode = widget.querySelector('.chart-unit');
     const legendNode = widget.querySelector('.chart-legend');
+    const summaryBody = widget.closest('.data-section')?.querySelector('.key-data-body');
     let chartPoints = [];
     let activeSeries = null;
     let tooltip = null;
@@ -40,7 +41,7 @@
     function showTooltip(point) {
       const node = ensureTooltip();
       if (!node || !chart || !activeSeries) return;
-      node.textContent = `${point.record.period}\n${activeSeries.label}：${formatValue(point.value, activeSeries.unit)}`;
+      node.textContent = `${point.record.period}\n${activeSeries.label}：${formatValue(point.value, activeSeries.display_unit || activeSeries.unit)}`;
       node.hidden = false;
       node.classList.add('is-visible');
       const chartRect = chart.getBoundingClientRect();
@@ -86,6 +87,31 @@
       const series = seriesList.find((item) => item.series_id === selector.value);
       if (!series) return;
       activeSeries = series;
+      if (summaryBody) {
+        summaryBody.replaceChildren();
+        [...series.records].reverse().slice(0, 6).forEach((row) => {
+          const tr = document.createElement('tr');
+          const period = document.createElement('td');
+          period.textContent = row.period;
+          const value = document.createElement('td');
+          const strong = document.createElement('strong');
+          strong.textContent = Number(row.value).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+          const unit = document.createElement('small');
+          unit.textContent = ` ${series.display_unit || series.unit || ''}`;
+          value.append(strong, unit);
+          const change = document.createElement('td');
+          const comparison = row.yoy ?? row.yoy_pp;
+          if (comparison === null || comparison === undefined) {
+            change.textContent = '—';
+            change.className = 'muted';
+          } else {
+            change.textContent = `${comparison > 0 ? '+' : ''}${Number(comparison).toFixed(2)}${row.yoy !== null && row.yoy !== undefined ? '%' : 'pp'}`;
+            change.className = comparison > 0 ? 'positive' : comparison < 0 ? 'negative' : '';
+          }
+          tr.append(period, value, change);
+          summaryBody.append(tr);
+        });
+      }
       const rect = chart.getBoundingClientRect();
       const scale = Math.min(window.devicePixelRatio || 1, 2);
       const width = Math.max(320, rect.width);
@@ -148,7 +174,7 @@
         ctx.lineWidth = 2;
         ctx.stroke();
       });
-      if (unitNode) unitNode.textContent = `单位：${series.unit}`;
+      if (unitNode) unitNode.textContent = `单位：${series.display_unit || series.unit}`;
       if (legendNode) legendNode.textContent = `${series.label} · 悬停或点击数据点查看数值 · 不跨频率连线`;
     }
 

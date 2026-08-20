@@ -6,10 +6,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://soberyimo.github.io"),
   title: {
-    default: "云见财报 · Visualizer",
+    default: "云见财报",
     template: "%s · 云见财报",
   },
-  description: "GPT 结构化财报数据的只读可视化展示层。",
+  description: "看懂公司的收入、盈利、经营与销量变化。",
   robots: { index: true, follow: true },
   icons: {
     icon: "/favicon.svg",
@@ -32,14 +32,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <span className="brand-mark">云见</span>
             <span>
               <strong>云见财报</strong>
-              <small>Financial Data Visualizer</small>
+              <small>公司财务与经营数据</small>
             </span>
           </Link>
         </header>
         {children}
         <footer>
-          <span>GPT-owned structured input</span>
-          <span>JSON / CSV · display only</span>
+          <span>云见财报</span>
+          <span>数据来源与口径可在公司页展开查看</span>
         </footer>
         <Script src="/snapshot-app.js" strategy="afterInteractive" />
       </body>

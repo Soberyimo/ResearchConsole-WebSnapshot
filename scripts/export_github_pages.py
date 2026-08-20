@@ -16,13 +16,25 @@ SNAPSHOT_PATH = PROJECT_DIR / "snapshot/visualizer_snapshot.json"
 PUBLIC_DIR = PROJECT_DIR / "public"
 DEFAULT_OUTPUT = PROJECT_DIR / "github-pages-dist"
 BLOCKED_TERMS = (
-    "ResearchOS production",
+    "ResearchOS",
+    "canonical",
+    "production",
     "财报预报",
     "研究结论",
     "管理层表态",
     "research_output_id",
     "record_id",
     "evidence_id",
+    "material_id",
+    "observation_key",
+    "business=",
+    "geography=",
+    "product=consolidated",
+    "AI抽取待复核",
+    "自动校验通过",
+    "唯一事实源",
+    "structured records",
+    "Structured financial data",
 )
 
 
@@ -51,7 +63,7 @@ def shell(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index, follow">
-  <meta name="description" content="结构化财报数据可视化。">
+  <meta name="description" content="看懂公司的收入、盈利、经营与销量变化。">
   <title>{e(title)} · 云见财报</title>
   <link rel="icon" href="/favicon.svg">
   <link rel="stylesheet" href="/site-shell.css{version}">
@@ -59,9 +71,9 @@ def shell(
   <link rel="stylesheet" href="/snapshot-polish.css{version}">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="/"><span class="brand-mark">云见</span><span><strong>云见财报</strong><small>Financial Data Visualizer</small></span></a></header>
+  <header class="topbar"><a class="brand" href="/"><span class="brand-mark">云见</span><span><strong>云见财报</strong><small>公司财务与经营数据</small></span></a></header>
   <main>{body}</main>
-  <footer><span>GPT-owned structured input</span><span>JSON / CSV · display only</span></footer>
+  <footer><span>云见财报</span><span>数据来源与口径可在公司页展开查看</span></footer>
   {data_script}
   <script src="/snapshot-app.js{version}" defer></script>
 </body>
@@ -85,31 +97,34 @@ def load_snapshot() -> dict[str, Any]:
 
 
 def home_body(payload: dict[str, Any]) -> str:
-    cards = []
+    grouped: dict[str, list[str]] = {}
     for company in payload["company_pages"].values():
-        cards.append(
-            f'<a class="company-card company-card-link" href="/company/{e(company["company_slug"])}/">'
-            '<div class="company-card-head"><div><p class="eyebrow">Structured financial data</p>'
-            f'<h2>{e(company["company"])}</h2><p>{e(company.get("ticker") or "结构化输入")}</p></div><span class="status-dot"></span></div>'
-            '<div class="card-metrics">'
-            f'<div><small>最新财报期</small><strong>{e(company.get("target_period") or "—")}</strong></div>'
-            f'<div><small>历史期间</small><strong>{company["financial_period_count"]}</strong></div>'
-            f'<div><small>数据记录</small><strong>{company["record_count"]}</strong></div></div>'
-            '<div class="card-footer single"><span class="arrow">查看数据 →</span></div></a>'
+        metrics = "".join(
+            f'<div><small>{e(metric["label"])}</small><strong>{e(metric["value"])}</strong>'
+            f'<span>{e(metric["unit"])} · {e(metric["period"])}</span></div>'
+            for metric in company.get("featured_metrics", [])
         )
-    summary = payload["summary"]
+        card = (
+            f'<a class="company-card company-card-link" href="/company/{e(company["company_slug"])}/">'
+            f'<div class="company-card-head"><div><p class="eyebrow">{e(company["industry"])}</p>'
+            f'<h2>{e(company["display_name"])}</h2><p>{e(company.get("ticker") or "A股口径")}</p></div>'
+            f'<span class="latest-period"><small>最新财务期</small><strong>{e(company.get("target_period") or "—")}</strong></span></div>'
+            f'<div class="card-reader-metrics">{metrics}</div>'
+            '<div class="card-footer single"><span class="arrow">进入公司页 →</span></div></a>'
+        )
+        grouped.setdefault(str(company["industry"]), []).append(card)
+    industries = "".join(
+        f'<section class="industry-group"><div class="industry-heading"><h3>{e(industry)}</h3><span>{len(cards)} 家公司</span></div>'
+        f'<div class="company-grid">{"".join(cards)}</div></section>'
+        for industry, cards in grouped.items()
+    )
     return (
-        '<section class="hero"><div><p class="eyebrow">云见财报 Visualizer</p><h1>结构化财报数据可视化</h1>'
-        '<p>读取 GPT 提供的 JSON / CSV，展示指标、历史趋势、来源与备注；不判断或重算财经事实。</p>'
-        '<div class="hero-actions"><a class="button-link" href="#companies">浏览公司数据</a></div></div></section>'
-        '<section class="summary-strip">'
-        f'<div><small>数据公司</small><strong>{summary["company_count"]}</strong></div>'
-        f'<div><small>结构化记录</small><strong>{summary["record_count"]}</strong></div>'
-        f'<div><small>待人工复核</small><strong>{summary["needs_review_count"]}</strong></div>'
-        f'<div><small>程序计算输入</small><strong>{summary["program_calculated_count"]}</strong></div></section>'
-        '<section class="section-heading" id="companies"><div><p class="eyebrow">Structured Data</p><h2>公司数据</h2></div>'
-        '<p>选择公司查看输入文件中已有的财务与运营历史。</p></section>'
-        f'<section class="company-grid">{"".join(cards)}</section>'
+        '<section class="hero reader-home-hero"><div><p class="eyebrow">云见财报</p><h1>看懂公司的收入、盈利、经营与销量变化</h1>'
+        '<p>从核心指标开始，沿着趋势图进入历史明细；需要时再展开来源、公式与口径。</p>'
+        '<div class="hero-actions"><a class="button-link" href="#companies">选择一家公司</a></div></div></section>'
+        '<section class="section-heading home-company-heading" id="companies"><div><p class="eyebrow">公司速览</p><h2>从你关心的公司开始</h2></div>'
+        '<p>卡片展示各公司现有数据中的最新财务期与少量核心指标。</p></section>'
+        + industries
     )
 
 

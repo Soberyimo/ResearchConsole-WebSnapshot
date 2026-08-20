@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { companyId } = await params;
   const page = getPage(companyId);
   return page
-    ? { title: `${page.company}财报数据`, description: `查看${page.company}结构化财务指标与历史趋势。` }
+    ? { title: `${page.company}财报数据`, description: `查看${page.company}核心财务、经营指标与历史趋势。` }
     : { title: "暂无公司数据" };
 }
 
