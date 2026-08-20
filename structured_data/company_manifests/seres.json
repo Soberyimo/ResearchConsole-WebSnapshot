@@ -1,0 +1,32 @@
+{
+  "company": "赛力斯",
+  "generated_from": "赛力斯数据.xlsx",
+  "review_status": "user_reviewed_and_structured",
+  "record_count": 389,
+  "source_breakdown": {
+    "company_disclosed": 159,
+    "program_calculated": 116,
+    "external_research": 114
+  },
+  "dataset_sections": {
+    "financial": "A股财务数据，季度连续性以A股披露体系为准",
+    "sales": "赛力斯A股产销快报口径",
+    "model_sales": "乘联会车型销量口径"
+  },
+  "comparability_notes": [
+    "赛力斯为A+H双上市公司。本包为保持季度连续性，财务数据统一采用A股披露口径，不混入H股IFRS历史口径。",
+    "2024年年报披露保证类质保成本由销售费用追溯调整至营业成本。本包沿用各期原财报数据，需要精确重述比较时再单独处理。",
+    "赛力斯汽车销量（上市公司产销快报口径）不等于问界交付量。",
+    "车型销量来自乘联会，与上市公司产销快报是不同事实层，不直接混算。",
+    "财务数据表中的2026Q2为空，本包没有把空值写成0，也未生成虚构记录。"
+  ],
+  "recommended_site_slug": "seres",
+  "recommended_display_name": "赛力斯",
+  "validation": {
+    "records": 389,
+    "duplicate_period_metric_scope": 0,
+    "missing_required_fields": 0,
+    "periods_normalized_to_four_digit_year": true,
+    "blank_2026Q2_financial_values_excluded": true
+  }
+}

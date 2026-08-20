@@ -1,5 +1,5 @@
 {
-  "name": "researchos-data-platform-web",
+  "name": "yunjian-financial-data-visualizer",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -7,13 +7,14 @@
   },
   "scripts": {
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
-    "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "build": "python3 scripts/build_visualizer_snapshot.py && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "snapshot:export": "python3 scripts/export_snapshot.py",
-    "snapshot:verify": "python3 scripts/export_snapshot.py --verify",
-    "pages:export": "python3 scripts/export_github_pages.py",
+    "structured:verify": "python3 scripts/structured_data.py structured_data/financial_records.json --csv-pair structured_data/financial_records.csv",
+    "snapshot:build": "python3 scripts/build_visualizer_snapshot.py",
+    "snapshot:verify": "python3 scripts/build_visualizer_snapshot.py --verify",
+    "pages:export": "python3 scripts/build_visualizer_snapshot.py && python3 scripts/export_github_pages.py",
     "pages:verify": "python3 scripts/export_github_pages.py --verify",
-    "test": "node --test tests/rendered-html.test.mjs && python3 -m unittest tests/frontend_rules_test.py",
+    "test": "node --test tests/rendered-html.test.mjs && python3 -m unittest tests/structured_data_test.py",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern github-pages-dist --ignore-pattern public/snapshot-app.js"
   },
   "dependencies": {

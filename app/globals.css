@@ -13,29 +13,6 @@ body {
   color: #111114;
 }
 
-.primary-nav {
-  align-items: center;
-  display: flex;
-  gap: 6px;
-  margin-left: auto;
-  margin-right: 18px;
-}
-
-.primary-nav a {
-  border-radius: 8px;
-  color: #52525b;
-  font-size: 0.8rem;
-  font-weight: 650;
-  padding: 9px 12px;
-  text-decoration: none;
-}
-
-.primary-nav a:hover,
-.primary-nav a:focus-visible {
-  background: #f0ecff;
-  color: #6332ff;
-}
-
 .hero-actions {
   align-items: center;
   display: flex;
@@ -54,66 +31,95 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.forecast-heading {
-  align-items: end;
-  margin-bottom: 42px;
+.card-footer.single {
+  justify-content: flex-end;
 }
 
-.forecast-heading h1 {
-  font-family: Georgia, "Songti SC", serif;
-  font-size: clamp(2.6rem, 5vw, 4.4rem);
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-  margin: 0;
+.data-section,
+.core-financial,
+.methodology-notes {
+  padding-top: 34px;
 }
 
-.calendar-section + .calendar-section {
-  margin-top: 58px;
+.trend-chart {
+  display: block;
+  height: 300px;
+  width: 100%;
 }
 
-.earnings-table {
-  background: var(--paper, #fff);
-  border: 1px solid var(--line, #e5e5eb);
-  border-radius: 12px;
+.chart-unit,
+.chart-legend {
+  color: var(--muted);
+  font-size: 0.72rem;
 }
 
-.earnings-table table {
-  min-width: 960px;
+.chart-legend {
+  margin-top: 6px;
+  text-align: right;
 }
 
-.earnings-table td strong,
-.earnings-table td small {
+.core-metric-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.core-metric-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 18px 20px;
+}
+
+.core-metric-card small,
+.core-metric-card strong,
+.core-metric-card span {
   display: block;
 }
 
-.earnings-table td small {
-  color: var(--muted, #71717a);
+.core-metric-card small,
+.core-metric-card span {
+  color: var(--muted);
   font-size: 0.68rem;
-  margin-top: 5px;
 }
 
-.event-status {
-  border-radius: 999px;
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 5px 9px;
-  white-space: nowrap;
+.core-metric-card strong {
+  color: #6332ff;
+  font-family: Georgia, serif;
+  font-size: 1.45rem;
+  margin: 8px 0 4px;
 }
 
-.event-status.upcoming {
-  background: #f0ecff;
-  color: #4f22dc;
+.methodology-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
 }
 
-.event-status.released {
-  background: #e9f5ee;
-  color: #216444;
+.methodology-grid > div {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 22px 24px;
 }
 
-.card-footer.single {
-  justify-content: flex-end;
+.methodology-grid h3 {
+  margin: 0 0 14px;
+}
+
+.methodology-grid ul {
+  color: #52525b;
+  line-height: 1.7;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.methodology-grid li + li {
+  margin-top: 9px;
+}
+
+.methodology-grid li span {
+  display: block;
 }
 
 @media (max-width: 760px) {
@@ -122,18 +128,6 @@ body {
     min-height: 76px;
     padding-bottom: 10px;
     padding-top: 10px;
-  }
-
-  .primary-nav {
-    gap: 2px;
-    margin: 0;
-    order: 3;
-    width: 100%;
-  }
-
-  .primary-nav a {
-    flex: 1;
-    text-align: center;
   }
 
   .hero h1 {
@@ -145,7 +139,8 @@ body {
     flex-direction: column;
   }
 
-  .forecast-heading {
-    align-items: flex-start;
+  .methodology-grid {
+    grid-template-columns: 1fr;
   }
+
 }

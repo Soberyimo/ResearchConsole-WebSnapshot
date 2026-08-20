@@ -1,5 +1,21 @@
 # 变更记录
 
+## [Seres production launch] - 2026-08-20
+
+- 合并 389 条 GPT / 用户已审核赛力斯记录，静态数据总量增至 751 条、7 家公司。
+- 新增正式路由 `/company/seres`，最新财务期间为输入中的 `2026Q1`。
+- 赛力斯页拆分财务、上市公司产销快报和乘联会问界车型销量三个数据区。
+- 年度、半年、季度、月度序列独立展示；Visualizer 不执行差分、同比、毛利率或跨口径补差。
+- 保留 A 股财务口径、2024 质保成本重分类及两类销量不可混算说明。
+
+## [Visualizer static-input cutover] - 2026-08-20
+
+- 新增 GPT 风格 JSON/CSV 输入、schema-lite validator 和 deterministic Visualizer snapshot。
+- 迁移 362 条历史财务记录；12 条 program-calculated 记录公式复核通过。
+- 首页与公司页切换到静态结构化数据；同比/环比仅显示输入值。
+- 移除财报预报路由、M1/M2/M3 Excel 导出器及相关前端测试/规则文件。
+- GitHub Pages 改为只发布 Visualizer HTML，不发布原始结构化数据。
+
 ## [Data Platform Slimdown] - 2026-08-16
 
 ### Changed

@@ -1,0 +1,241 @@
+{
+  "schema_version": "legacy-static-migration-1",
+  "dataset_scope": "legacy_records_only",
+  "superseded_by_combined_dataset": true,
+  "output_hashes_are_legacy_export_only": true,
+  "authoritative": false,
+  "production_mutation": false,
+  "source_files": {
+    "04_公司数据库/财报历史数据库.xlsx": "5d0fce173cdcb871fc5bacaa772ff855622638d53d57541b69d22c06b150b0b3",
+    "00_系统/配置/MetricDefinitionRegistry_v0.1.json": "982321133ca32e6dc778a93961de612e366fb7611f1f68af96f08e983bbdac30",
+    "02_原始财报/财报材料索引.xlsx": "c3db7fe1e832cad7363d494d5a48e48016b44efccebc02cfe0ee5f299dc5104d"
+  },
+  "outputs": {
+    "structured_data/financial_records.json": {
+      "sha256": "863bcbf3ee541c08985328b4522dc2e5f39cb5709f278f7c0448c9681996cb77",
+      "records": 362
+    },
+    "structured_data/financial_records.csv": {
+      "sha256": "8cfcfd5f0cb7c95d621de3ac8c8d361e3de6310feceb4c865166f921388c325f",
+      "records": 362
+    }
+  },
+  "counts": {
+    "legacy_current_records": 362,
+    "migrated": 362,
+    "skipped": 0,
+    "needs_review": 362,
+    "verified": 0,
+    "source_missing": 0,
+    "invalid_required_fields": 0,
+    "by_company": {
+      "吉利汽车控股有限公司": 39,
+      "宁德时代": 27,
+      "小鹏汽车": 112,
+      "理想汽车": 80,
+      "英伟达": 60,
+      "高通": 44
+    },
+    "by_source_type": {
+      "company_disclosed": 350,
+      "program_calculated": 12
+    },
+    "by_status": {
+      "needs_review": 362
+    }
+  },
+  "formula_validation": {
+    "checked": 12,
+    "passed": 12,
+    "failed": 0,
+    "checks": [
+      {
+        "legacy_record_id": "rec_051ec6d5c58550b7303e",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 2.7506530386745e-10,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_15ab6e9f8fa34871fd31",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 1.997986665003282e-9,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_f141eee07a4f992ad3a5",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 2.2579618175200267e-9,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_6c9dc4d111a112f70d1b",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 4.626850014233241e-9,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_2526394db61556e005a8",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 1.2495124934730484e-9,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_dd3ab2a7dd9f2cf2801f",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 2.0087416174874306e-9,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_2b83fe3666beac8d2f0e",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 4.858366153825955e-9,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_3b838846a41561dd8441",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 1.0130243310868536e-9,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_e3109a35e3f4e0bda11b",
+        "formula_id": "formula_q2_from_h1_minus_q1_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 2.9103830456733704e-11,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_7847daba11d8fae32c70",
+        "formula_id": "formula_q2_from_h1_minus_q1_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 0,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_4c5c85e0166ae42b8167",
+        "formula_id": "formula_q2_from_h1_minus_q1_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 3.637978807091713e-12,
+        "passed": true
+      },
+      {
+        "legacy_record_id": "rec_25b507b7833381e05c64",
+        "formula_id": "formula_revenue_share_of_group_v1",
+        "input_count": 2,
+        "missing_input_count": 0,
+        "result_delta": 4.036392553530277e-9,
+        "passed": true
+      }
+    ]
+  },
+  "spot_checks": [
+    {
+      "legacy_record_id": "rec_3c7c0c0dfcc28b607396",
+      "company": "吉利汽车控股有限公司",
+      "output_index": 0,
+      "period": "2024H1",
+      "metric": "gross_profit",
+      "value": 19868.348,
+      "unit": "CNY million",
+      "currency": "CNY",
+      "source": "Geely Automobile Holdings Limited 2025 Interim Results",
+      "formula": null,
+      "restated": false
+    },
+    {
+      "legacy_record_id": "rec_05f6a6740e4e3ef59721",
+      "company": "宁德时代",
+      "output_index": 39,
+      "period": "2024Q3",
+      "metric": "net_income",
+      "value": 13136.086,
+      "unit": "CNY million",
+      "currency": "CNY",
+      "source": "宁德时代新能源科技股份有限公司2024年年度报告摘要",
+      "formula": null,
+      "restated": false
+    },
+    {
+      "legacy_record_id": "rec_5a00cdad748ed217417b",
+      "company": "小鹏汽车",
+      "output_index": 66,
+      "period": "2024Q2",
+      "metric": "cash_and_equivalents",
+      "value": 14253.645,
+      "unit": "CNY million",
+      "currency": "CNY",
+      "source": "XPENG Reports Second Quarter 2024 Unaudited Financial Results",
+      "formula": null,
+      "restated": false
+    },
+    {
+      "legacy_record_id": "rec_0539a455fc93c4051433",
+      "company": "理想汽车",
+      "output_index": 178,
+      "period": "2024Q2",
+      "metric": "gross_margin",
+      "value": 18.7,
+      "unit": "%",
+      "currency": null,
+      "source": "Li Auto Inc. Announces Unaudited 2024Q2 Financial Results",
+      "formula": null,
+      "restated": false
+    },
+    {
+      "legacy_record_id": "rec_aa1545018daeaac00350",
+      "company": "英伟达",
+      "output_index": 258,
+      "period": "FY2022",
+      "metric": "gross_margin",
+      "value": 64.9,
+      "unit": "%",
+      "currency": null,
+      "source": "NVIDIA Announces Financial Results — FY2023",
+      "formula": null,
+      "restated": false
+    },
+    {
+      "legacy_record_id": "rec_8b2c25e4e6991a25e759",
+      "company": "高通",
+      "output_index": 318,
+      "period": "FY2024Q1",
+      "metric": "revenue",
+      "value": 598,
+      "unit": "USD million",
+      "currency": "USD",
+      "source": "Qualcomm Announces First Quarter Fiscal 2024 Results",
+      "formula": null,
+      "restated": false
+    }
+  ],
+  "deterministic_sort": [
+    "company",
+    "period_end_date",
+    "period",
+    "metric",
+    "scope",
+    "basis",
+    "measurement_basis",
+    "legacy_record_id"
+  ],
+  "retained_input_issue": "co_000006 / 2026H1 / 2026-08-17 remains an input-layer calendar status issue and was not modified by this migration."
+}

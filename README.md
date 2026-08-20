@@ -1,16 +1,18 @@
-# 云见财报数据平台 Web Snapshot
+# 云见财报 Visualizer
 
-ResearchOS 的独立、派生、只读前端，只展示两类一级功能：
+只读展示 GPT 提供的结构化财报数据。正式输入位于：
 
-- 财报预报：公司、财报期、发布时间、发布状态、即将发布、已发布与来源；
-- 公司 / 财报数据：历史财务与运营指标、同比环比、单位、币种、口径、程序计算及来源 lineage。
+- `structured_data/financial_records.json`
+- `structured_data/financial_records.csv`
+- `structured_data/company_manifests/*.json`（公司级展示边界与推荐 slug）
 
-网页不展示研究结论、管理层表态分析、研究问题、风险、选题、图表建议或其他 M4 研究结果。
+JSON 与 CSV 表达同一批记录；Visualizer 只解析、校验、排序和格式化，不搜索来源、不补数、不判断财年、不执行财经计算。
 
 ## 本地验证
 
 ```bash
-npm run snapshot:export
+npm run structured:verify
+npm run snapshot:build
 npm run snapshot:verify
 npm run build
 npm test
@@ -19,11 +21,18 @@ npm run pages:export
 npm run pages:verify
 ```
 
-生成的 `snapshot/data_platform_snapshot.json` 是可删除重建的前端派生文件，不进入源码仓库，也不部署到公开站点。ResearchOS production 始终是唯一事实源和唯一写入方。
+`snapshot/visualizer_snapshot.json`、`dist/` 和 `github-pages-dist/` 均为可删除重建的派生文件。公开 Pages 成品不携带原始 JSON/CSV。
 
-## 数据边界
+## 输入边界
 
-- 导出、构建和浏览均为只读，不写回 ResearchOS。
-- 不修改财报日历、财务历史数据库、正式材料、API 或 M1/M2/M3 流程。
-- 精确发布时间只使用正式字段；只有日期时不推测具体时刻。
-- 前端导出器直接只读财报日历、财务历史库、指标定义和材料索引，不依赖 M4 canonical、研究发现或管理层表态数据库。
+- 必填：公司、财报期、指标、值、单位、口径、来源身份、来源、来源位置、状态。
+- 支持 `company_disclosed`、`program_calculated`、`management_forward_looking`、`external_research`、`gpt_estimate`、`user_material`。
+- `program_calculated` 必须由输入提供公式；Visualizer 不重算。
+- `yoy`、`yoy_pp`、`qoq` 只有在输入明确提供时显示。
+- `missing` 状态允许空值；其他状态的值必须为数字。
+- legacy `record_id`、`evidence_id`、`material_id` 等治理 ID 不进入展示输入。
+- 相同 company / period / metric / scope / dimension / basis / unit 的展示 key 不得重复。
+
+## 赛力斯正式输入
+
+赛力斯使用固定路由 `/company/seres`，389 条记录全部来自 GPT / 用户审核输入。页面将财务、上市公司产销快报和乘联会车型销量分区展示；年度、半年、季度、月度按频率独立成序列。最新财务期间只从财务 records 判断。
