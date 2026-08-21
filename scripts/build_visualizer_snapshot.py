@@ -56,10 +56,25 @@ METRIC_LABELS = {
     "vehicle_gross_profit_per_vehicle": "单车毛利", "vehicle_revenue_per_vehicle": "单车汽车收入",
     "vehicle_sales": "总销量", "zeekr_sales": "极氪销量", "overseas_revenue_share": "海外收入占比",
 }
-UNIT_LABELS = {
-    "CNY million": "亿元", "USD million": "亿美元", "HKD million": "亿港元",
-    "EUR million": "亿欧元", "vehicles": "辆", "辆": "辆",
+UNIT_LABELS = {"vehicles": "辆", "辆": "辆"}
+MONEY_DISPLAY_UNITS = {
+    "CNY": "亿元", "USD": "亿美元", "HKD": "亿港元", "EUR": "亿欧元",
 }
+CURRENCY_ALIASES = {
+    "CNY": "CNY", "RMB": "CNY", "人民币": "CNY",
+    "USD": "USD", "US$": "USD", "美元": "USD",
+    "HKD": "HKD", "HK$": "HKD", "港元": "HKD",
+    "EUR": "EUR", "€": "EUR", "欧元": "EUR",
+}
+PER_UNIT_PATTERN = re.compile(r"(?:/|／|\bper\b|每(?:辆|股|Wh|kWh|GWh|单位))", re.I)
+MONEY_SCALE_PATTERNS = (
+    (re.compile(r"^(?:hundred\s+million|100\s*million|亿(?:元|美元|港元|欧元)?)$", re.I), 1.0),
+    (re.compile(r"^(?:billion|bn|十亿(?:元|美元|港元|欧元)?)$", re.I), 10.0),
+    (re.compile(r"^(?:million|mn|mio|百万(?:元|美元|港元|欧元)?)$", re.I), 0.01),
+    (re.compile(r"^(?:ten\s+thousand|10k|万(?:元|美元|港元|欧元)?)$", re.I), 0.0001),
+    (re.compile(r"^(?:thousand|k|千(?:元|美元|港元|欧元)?)$", re.I), 0.00001),
+    (re.compile(r"^(?:yuan|dollars?|元|美元|港元|欧元)$", re.I), 0.00000001),
+)
 BUSINESS_LABELS = {
     "Automotive": "汽车业务", "Data Center": "Data Center", "Edge Computing": "Edge Computing",
     "Hyperscale": "Hyperscale", "AI Clouds, Industrial & Enterprise (ACIE)": "AI Clouds、工业与企业（ACIE）",
@@ -239,16 +254,43 @@ def normalized_record(record: dict[str, Any]) -> dict[str, Any]:
     result["metric_name"] = result.get("metric_name") or METRIC_LABELS.get(str(result.get("metric"))) or result.get("metric")
     return result
 
-def display_unit(unit: Any) -> str:
-    return UNIT_LABELS.get(str(unit), str(unit or ""))
+def normalized_currency(currency: Any) -> str | None:
+    value = str(currency or "").strip()
+    return CURRENCY_ALIASES.get(value) or CURRENCY_ALIASES.get(value.upper())
 
-def display_number(value: Any, unit: Any, compact_sales: bool = False) -> tuple[Any, str]:
-    if not isinstance(value, (int, float)) or isinstance(value, bool): return value, display_unit(unit)
-    if unit in {"CNY million", "USD million", "HKD million", "EUR million"}:
-        return value / 100, display_unit(unit)
+def is_per_unit_money(unit: Any) -> bool:
+    return bool(PER_UNIT_PATTERN.search(str(unit or "")))
+
+def money_display_spec(unit: Any, currency: Any) -> tuple[float, str] | None:
+    """Return the display multiplier and 亿-denominated label for total money only."""
+    code = normalized_currency(currency)
+    raw_unit = re.sub(r"\s+", " ", str(unit or "").strip())
+    if not code or not raw_unit or is_per_unit_money(raw_unit): return None
+    currency_tokens = {
+        "CNY": ("CNY", "RMB", "人民币"), "USD": ("USD", "US$", "美元"),
+        "HKD": ("HKD", "HK$", "港元"), "EUR": ("EUR", "€", "欧元"),
+    }[code]
+    scale_unit = raw_unit
+    for token in currency_tokens:
+        scale_unit = re.sub(re.escape(token), "", scale_unit, flags=re.I)
+    scale_unit = re.sub(r"[\s_-]+", " ", scale_unit).strip()
+    if not scale_unit: scale_unit = "元" if code == "CNY" else {"USD": "美元", "HKD": "港元", "EUR": "欧元"}[code]
+    for pattern, multiplier in MONEY_SCALE_PATTERNS:
+        if pattern.fullmatch(scale_unit): return multiplier, MONEY_DISPLAY_UNITS[code]
+    return None
+
+def display_unit(unit: Any, currency: Any = None) -> str:
+    money = money_display_spec(unit, currency)
+    return money[1] if money else UNIT_LABELS.get(str(unit), str(unit or ""))
+
+def display_number(value: Any, unit: Any, currency: Any = None, compact_sales: bool = False) -> tuple[Any, str]:
+    money = money_display_spec(unit, currency)
+    if not isinstance(value, (int, float)) or isinstance(value, bool): return value, money[1] if money else display_unit(unit, currency)
+    if money:
+        return value * money[0], money[1]
     if compact_sales and unit in {"辆", "vehicles"}:
         return value / 10000, "万辆"
-    return value, display_unit(unit)
+    return value, display_unit(unit, currency)
 
 def format_value(value: Any, unit: str | None) -> str:
     if not isinstance(value, (int, float)) or isinstance(value, bool): return "—"
@@ -304,10 +346,10 @@ def build_series(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     series: list[dict[str, Any]] = []
     for identity, rows in grouped.items():
         rows.sort(key=period_sort_key); first = rows[-1]; label = base_label(first)
-        sample_value, sample_unit = display_number(first.get("value"), first.get("unit"))
+        sample_value, sample_unit = display_number(first.get("value"), first.get("unit"), first.get("currency"))
         series.append({
             "series_id": "series_" + sha256_bytes("|".join(identity).encode("utf-8"))[:16],
-            "metric": first.get("metric"), "label": label, "unit": first.get("unit"),
+            "metric": first.get("metric"), "label": label, "unit": first.get("unit"), "currency": first.get("currency"),
             "display_unit": sample_unit, "basis": first.get("basis") or "",
             "legacy": is_legacy_series(first),
             "period_type": first.get("period_type"), "records": [{
@@ -372,7 +414,7 @@ def summary_table_html(item: dict[str, Any], limit: int = 6) -> str:
     rows = []
     for record in visible:
         comparison, suffix = latest_comparison(record)
-        value, unit = display_number(record.get("value"), item.get("unit"))
+        value, unit = display_number(record.get("value"), item.get("unit"), record.get("currency"))
         comparison_cell = f'<td>{comparison_view(comparison, suffix)}</td>' if has_comparison else ""
         rows.append(f'<tr><td>{e(record.get("display_period"))}</td><td><strong>{e(format_value(value, item.get("unit")))}</strong> <small>{e(unit)}</small></td>{comparison_cell}</tr>')
     comparison_head = '<th class="summary-change-head">同比 / 变化</th>' if has_comparison else '<th class="summary-change-head" hidden>同比 / 变化</th>'
@@ -404,7 +446,7 @@ def all_data_html(series: list[dict[str, Any]], period_label: str) -> str:
         rows = []
         for record in reversed(item["records"]):
             comparison, suffix = latest_comparison(record)
-            value, unit = display_number(record.get("value"), item.get("unit"))
+            value, unit = display_number(record.get("value"), item.get("unit"), record.get("currency"))
             qoq_cell = f'<td>{comparison_view(record.get("qoq"))}</td>' if has_qoq else ""
             yoy_cell = f'<td>{comparison_view(comparison, suffix)}</td>' if has_yoy else ""
             rows.append(f'<tr><td><strong>{e(record.get("display_period"))}</strong></td><td>{e(format_value(value, item.get("unit")))} <small>{e(unit)}</small></td>{qoq_cell}{yoy_cell}<td><details class="row-source"><summary>查看</summary><div>{source_details(record)}</div></details></td></tr>')
@@ -442,7 +484,7 @@ def metric_cards_html(records: list[dict[str, Any]], company: str, latest_period
     for selector in COMPANY_PRESENTATION[company]["featured"]:
         row = choose_record(records, selector, latest_period)
         if not row: continue
-        value, unit = display_number(row.get("value"), row.get("unit"), compact_sales=True)
+        value, unit = display_number(row.get("value"), row.get("unit"), row.get("currency"), compact_sales=True)
         cards.append(f'<article class="reader-metric-card"><small>{e(base_label(row))}</small><strong>{e(format_value(value, row.get("unit")))}</strong><span>{e(unit)} · {e(display_period(row.get("period")))}</span></article>')
     return '<section class="reader-metric-grid" id="overview">' + "".join(cards) + '</section>'
 
@@ -462,7 +504,7 @@ def company_semantic_html(company: str, records: list[dict[str, Any]], latest_pe
         def node(business: str) -> str:
             row = choose_record(records, {"metric": "revenue", "business": business}, latest_period)
             if not row: return f'<li><span>{e(BUSINESS_LABELS.get(business, business))}</span></li>'
-            value, unit = display_number(row.get("value"), row.get("unit"))
+            value, unit = display_number(row.get("value"), row.get("unit"), row.get("currency"))
             return f'<li><span>{e(BUSINESS_LABELS.get(business, business))}</span><strong>{e(format_value(value, row.get("unit")))} {e(unit)}</strong></li>'
         return (
             '<section class="semantic-panel" id="business-framework"><div class="section-heading compact"><div><p class="eyebrow">业务层级</p>'
@@ -484,11 +526,11 @@ def company_semantic_html(company: str, records: list[dict[str, Any]], latest_pe
 def chart_groups(groups: dict[str, list[dict[str, Any]]]) -> dict[str, list[dict[str, Any]]]:
     return {
         group: [{
-            "series_id": item["series_id"], "label": item["label"], "unit": item["unit"],
+            "series_id": item["series_id"], "label": item["label"],
             "display_unit": item["display_unit"], "legacy": item.get("legacy", False),
             "records": [{
                 "period": row["period"], "display_period": row.get("display_period"),
-                "value": display_number(row["value"], item["unit"])[0], "qoq": row.get("qoq"),
+                "value": display_number(row["value"], item["unit"], row.get("currency"))[0], "qoq": row.get("qoq"),
                 "yoy": row.get("yoy"), "yoy_pp": row.get("yoy_pp"),
             } for row in item["records"]],
         } for item in series]
@@ -515,7 +557,7 @@ def home_metrics(records: list[dict[str, Any]], company: str, latest_period: str
     for selector in COMPANY_PRESENTATION[company]["featured"][:3]:
         row = choose_record(records, selector, latest_period)
         if row:
-            value, unit = display_number(row.get("value"), row.get("unit"), compact_sales=True)
+            value, unit = display_number(row.get("value"), row.get("unit"), row.get("currency"), compact_sales=True)
             result.append({"label": base_label(row), "value": format_value(value, row.get("unit")), "unit": unit, "period": display_period(row.get("period"))})
     return result
 

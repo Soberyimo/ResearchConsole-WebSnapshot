@@ -11,6 +11,9 @@ sys.path.insert(0, str(PROJECT_DIR / "scripts"))
 from build_visualizer_snapshot import (  # noqa: E402
     all_data_html,
     build,
+    display_number,
+    is_per_unit_money,
+    money_display_spec,
     semantic_metric_label,
 )
 from structured_data import StructuredDataError, validate_records, verify_json_csv  # noqa: E402
@@ -183,6 +186,47 @@ class StructuredDataTest(unittest.TestCase):
         catl_page = next(page for page in payload["company_pages"].values() if page["company"] == "宁德时代")
         self.assertIn("2,769.17", catl_page["html"])
         self.assertIn("亿元", catl_page["html"])
+
+    def test_all_total_money_records_normalize_to_hundred_million_display_units(self):
+        records = json.loads((PROJECT_DIR / "structured_data/financial_records.json").read_text(encoding="utf-8"))
+        expected_units = {"CNY": "亿元", "USD": "亿美元", "HKD": "亿港元", "EUR": "亿欧元"}
+        total_money_records = []
+        unit_economics = []
+        unknown = []
+        for row in records:
+            if not row.get("currency"):
+                continue
+            spec = money_display_spec(row.get("unit"), row.get("currency"))
+            if spec:
+                total_money_records.append(row)
+                self.assertEqual(spec[1], expected_units[row["currency"]])
+                _, unit = display_number(row.get("value"), row.get("unit"), row.get("currency"))
+                self.assertEqual(unit, expected_units[row["currency"]])
+            elif is_per_unit_money(row.get("unit")):
+                unit_economics.append(row)
+            else:
+                unknown.append(row)
+        self.assertEqual(len(total_money_records), 508)
+        self.assertEqual(len(unit_economics), 16)
+        self.assertEqual(unknown, [])
+        self.assertEqual({(row["currency"], row["unit"]) for row in total_money_records}, {
+            ("CNY", "CNY million"), ("CNY", "亿元"), ("USD", "USD million"),
+        })
+        self.assertEqual({row["unit"] for row in unit_economics}, {"元/辆"})
+
+    def test_money_normalizer_supports_scale_and_currency_variants_without_hardcoded_pairs(self):
+        cases = (
+            (100, "CNY million", "CNY", 1, "亿元"),
+            (100, "USD million", "USD", 1, "亿美元"),
+            (100, "HKD million", "HKD", 1, "亿港元"),
+            (100, "EUR million", "EUR", 1, "亿欧元"),
+            (1, "亿元", "CNY", 1, "亿元"),
+            (1, "USD billion", "USD", 10, "亿美元"),
+            (10000, "万元", "CNY", 1, "亿元"),
+        )
+        for value, unit, currency, expected_value, expected_unit in cases:
+            self.assertEqual(display_number(value, unit, currency), (expected_value, expected_unit))
+        self.assertEqual(display_number(123456, "元/辆", "CNY"), (123456, "元/辆"))
 
     def test_patch_financial_facts_and_formulas_are_preserved_exactly(self):
         patch = json.loads((PROJECT_DIR / "structured_data/patches/VISUALIZER_DATA_PATCH_2026-08-20.json").read_text(encoding="utf-8-sig"))["records"]

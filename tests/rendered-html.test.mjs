@@ -112,6 +112,27 @@ test("six updated company pages expose the requested financial semantics", async
   assert.doesNotMatch(Object.values(pages).map((page) => page.html).join(""), /以财务数据自身期间判断/);
 });
 
+test("all reader-facing pages use 亿 money units without touching unit economics", async () => {
+  const snapshot = JSON.parse(await readFile(new URL("snapshot/visualizer_snapshot.json", projectRoot), "utf8"));
+  const routes = ["/", ...Object.values(snapshot.company_pages).map((page) => `/company/${page.company_slug}`)];
+  const visiblePages = [];
+  for (const route of routes) {
+    const response = await render(route);
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    const visibleHtml = html.replace(/<script\b[\s\S]*?<\/script>/gi, "").replace(/<style\b[\s\S]*?<\/style>/gi, "");
+    assert.doesNotMatch(visibleHtml, /CNY million|USD million|HKD million|EUR million|百万元|万元/);
+    visiblePages.push(visibleHtml);
+  }
+  const combined = visiblePages.join("\n");
+  assert.match(combined, /亿元/);
+  assert.match(combined, /亿美元/);
+  assert.match(combined, /元\/辆/);
+  assert.match(combined, /万辆/);
+  assert.match(combined, /GWh/);
+  assert.match(combined, /%/);
+});
+
 test("unknown companies return a clean 404", async () => {
   const response = await render("/company/unknown");
   assert.equal(response.status, 404);
