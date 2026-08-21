@@ -18,6 +18,7 @@
     const unitNode = widget.querySelector('.chart-unit');
     const legendNode = widget.querySelector('.chart-legend');
     const summaryBody = widget.closest('.data-section')?.querySelector('.key-data-body');
+    const summaryChangeHead = widget.closest('.data-section')?.querySelector('.summary-change-head');
     let chartPoints = [];
     let activeSeries = null;
     let tooltip = null;
@@ -89,26 +90,33 @@
       activeSeries = series;
       if (summaryBody) {
         summaryBody.replaceChildren();
-        [...series.records].reverse().slice(0, 6).forEach((row) => {
+        const visibleRows = [...series.records].reverse().slice(0, 6);
+        const hasComparison = visibleRows.some((row) => row.yoy !== null && row.yoy !== undefined || row.yoy_pp !== null && row.yoy_pp !== undefined);
+        if (summaryChangeHead) summaryChangeHead.hidden = !hasComparison;
+        visibleRows.forEach((row) => {
           const tr = document.createElement('tr');
           const period = document.createElement('td');
-          period.textContent = row.period;
+          period.textContent = row.display_period || row.period;
           const value = document.createElement('td');
           const strong = document.createElement('strong');
           strong.textContent = Number(row.value).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
           const unit = document.createElement('small');
           unit.textContent = ` ${series.display_unit || series.unit || ''}`;
           value.append(strong, unit);
-          const change = document.createElement('td');
-          const comparison = row.yoy ?? row.yoy_pp;
-          if (comparison === null || comparison === undefined) {
-            change.textContent = '—';
-            change.className = 'muted';
+          if (hasComparison) {
+            const change = document.createElement('td');
+            const comparison = row.yoy_pp ?? row.yoy;
+            if (comparison === null || comparison === undefined) {
+              change.textContent = '—';
+              change.className = 'muted';
+            } else {
+              change.textContent = `${comparison > 0 ? '+' : ''}${Number(comparison).toFixed(2)}${row.yoy_pp !== null && row.yoy_pp !== undefined ? ' 个百分点' : '%'}`;
+              change.className = comparison > 0 ? 'positive' : comparison < 0 ? 'negative' : '';
+            }
+            tr.append(period, value, change);
           } else {
-            change.textContent = `${comparison > 0 ? '+' : ''}${Number(comparison).toFixed(2)}${row.yoy !== null && row.yoy !== undefined ? '%' : 'pp'}`;
-            change.className = comparison > 0 ? 'positive' : comparison < 0 ? 'negative' : '';
+            tr.append(period, value);
           }
-          tr.append(period, value, change);
           summaryBody.append(tr);
         });
       }
@@ -148,7 +156,7 @@
       series.records.forEach((row, index) => {
         ctx.fillStyle = '#68716c';
         ctx.textAlign = 'center';
-        ctx.fillText(row.period, x(index), height - 20);
+        ctx.fillText(row.display_period || row.period, x(index), height - 20);
       });
       ctx.strokeStyle = '#6332FF';
       ctx.lineWidth = 3;

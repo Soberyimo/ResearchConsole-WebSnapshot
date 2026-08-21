@@ -895,6 +895,29 @@ footer {
 .reader-metric-card span { color: var(--muted); font-size: 0.7rem; }
 .reader-metric-card strong { font-family: Georgia, serif; font-size: 1.55rem; margin: 9px 0 6px; }
 
+.overview-heading { margin: 28px 0 16px; }
+.overview-heading h2 { font-size: 1.35rem; margin: 5px 0 0; }
+
+.semantic-panel { border-bottom: 1px solid var(--line); padding: 34px 0 42px; }
+.semantic-callout {
+  background: #f7f4ff;
+  border: 1px solid #ded4ff;
+  border-radius: 11px;
+  color: #4c465e;
+  margin: 22px 0 4px;
+  padding: 18px 22px;
+}
+.semantic-callout strong { color: #382a72; }
+.semantic-callout p { line-height: 1.65; margin: 7px 0 0; }
+.business-tree { display: grid; gap: 12px; margin-top: 20px; }
+.tree-root { background: #24212e; border-radius: 10px; color: white; padding: 15px 18px; }
+.tree-branches { display: grid; gap: 12px; grid-template-columns: 2fr 1fr; }
+.tree-branches article { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.tree-branches h3 { margin: 0 0 12px; }
+.tree-branches ul { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.tree-branches li { align-items: center; background: #f7f7fa; border-radius: 8px; display: flex; gap: 12px; justify-content: space-between; padding: 11px 12px; }
+.tree-branches li strong { font-size: .78rem; white-space: nowrap; }
+
 .section-nav {
   background: rgba(247, 247, 250, 0.94);
   border-bottom: 1px solid var(--line);
@@ -1025,6 +1048,7 @@ footer {
   .reader-company-hero { align-items: start; grid-template-columns: 1fr; gap: 18px; }
   .reader-company-hero aside { align-items: flex-start; }
   .reader-metric-grid { grid-template-columns: 1fr; }
+  .tree-branches { grid-template-columns: 1fr; }
   .section-nav { margin-left: 0; margin-right: 0; padding-left: 0; top: 68px; }
   .data-section { padding: 40px 0 38px; }
   .data-section .section-heading.compact { display: block; }

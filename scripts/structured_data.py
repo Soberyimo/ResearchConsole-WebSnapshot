@@ -30,7 +30,7 @@ ALLOWED_SOURCE_TYPES = {
     "gpt_estimate",
     "user_material",
 }
-ALLOWED_STATUSES = {"verified", "needs_review", "missing"}
+ALLOWED_STATUSES = {"verified", "calculated", "needs_review", "missing"}
 LEGACY_ID_FIELDS = {"record_id", "observation_key", "evidence_id", "material_id"}
 JSON_FIELDS = {"formula_inputs"}
 BOOLEAN_FIELDS = {"restated"}
@@ -102,6 +102,10 @@ def validate_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         for field in REQUIRED_FIELDS:
             if field not in record:
                 missing.append(field)
+            elif field == "source_location":
+                # GPT-owned patches may deliberately leave the exact location blank.
+                # The Visualizer must preserve that absence instead of inventing one.
+                continue
             elif field == "value" and record.get("status") == "missing":
                 continue
             elif record[field] is None or record[field] == "":
@@ -119,6 +123,8 @@ def validate_records(records: list[dict[str, Any]]) -> dict[str, Any]:
             issues.append(f"record {index}: unsupported status")
         if record.get("source_type") == "program_calculated" and not record.get("formula"):
             issues.append(f"record {index}: program_calculated requires formula")
+        if record.get("status") == "calculated" and record.get("source_type") != "program_calculated":
+            issues.append(f"record {index}: calculated status requires program_calculated source_type")
         for field in ("yoy", "yoy_pp", "qoq"):
             comparison = record.get(field)
             if comparison is not None and (isinstance(comparison, bool) or not isinstance(comparison, (int, float))):
@@ -135,6 +141,7 @@ def validate_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         "records": len(records),
         "companies": len({str(record["company"]) for record in records}),
         "verified": sum(record.get("status") == "verified" for record in records),
+        "calculated": sum(record.get("status") == "calculated" for record in records),
         "needs_review": sum(record.get("status") == "needs_review" for record in records),
         "program_calculated": sum(record.get("source_type") == "program_calculated" for record in records),
     }

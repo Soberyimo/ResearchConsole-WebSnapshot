@@ -28,10 +28,12 @@ npm run pages:verify
 - 必填：公司、财报期、指标、值、单位、口径、来源身份、来源、来源位置、状态。
 - 支持 `company_disclosed`、`program_calculated`、`management_forward_looking`、`external_research`、`gpt_estimate`、`user_material`。
 - `program_calculated` 必须由输入提供公式；Visualizer 不重算。
+- `calculated` 仅用于 `program_calculated` 输入；公式和值均按 GPT 补丁原样保留。
 - `yoy`、`yoy_pp`、`qoq` 只有在输入明确提供时显示。
 - `missing` 状态允许空值；其他状态的值必须为数字。
 - legacy `record_id`、`evidence_id`、`material_id` 等治理 ID 不进入展示输入。
 - 相同 company / period / metric / scope / dimension / basis / unit 的展示 key 不得重复。
+- 正式增量补丁使用 `scripts/merge_visualizer_patch.py` 按补丁声明的 merge key 预览并 upsert；脚本支持 expected-old SHA256 写前保护。
 
 ## 赛力斯正式输入
 

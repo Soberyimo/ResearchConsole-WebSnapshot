@@ -30,9 +30,10 @@ test("visualizer snapshot is static-input only", async () => {
   assert.equal(snapshot.authoritative, false);
   assert.equal(snapshot.production_mutation, false);
   assert.equal(snapshot.summary.company_count, 7);
-  assert.equal(snapshot.summary.record_count, 751);
-  assert.equal(snapshot.summary.verified_count, 389);
-  assert.equal(snapshot.summary.program_calculated_count, 128);
+  assert.equal(snapshot.summary.record_count, 898);
+  assert.equal(snapshot.summary.verified_count, 512);
+  assert.equal(snapshot.summary.calculated_count, 24);
+  assert.equal(snapshot.summary.program_calculated_count, 152);
   assert.equal("earnings_calendar" in snapshot, false);
   assert.equal(Object.keys(snapshot.company_pages).length, 7);
   assert.equal(snapshot.company_pages.seres.target_period, "2026Q1");
@@ -92,6 +93,23 @@ test("Seres page separates finance, company sales, and AITO model sales", async 
   assert.match(html, /28\.93/);
   assert.doesNotMatch(html, /2,893/);
   assert.doesNotMatch(html, /2026Q2 财务数据/);
+});
+
+test("six updated company pages expose the requested financial semantics", async () => {
+  const snapshot = JSON.parse(await readFile(new URL("snapshot/visualizer_snapshot.json", projectRoot), "utf8"));
+  const pages = Object.fromEntries(Object.values(snapshot.company_pages).map((page) => [page.company, page]));
+  assert.match(pages["宁德时代"].html, /归母净利润/);
+  assert.match(pages["宁德时代"].html, /498GWh 为电池系统产量/);
+  assert.match(pages["吉利汽车"].html, /核心归母净利润/);
+  assert.match(pages["吉利汽车"].html, /重述提示/);
+  assert.match(pages["小鹏汽车"].html, /公司定义的复合 cash position/);
+  assert.match(pages["小鹏汽车"].html, /归属普通股股东净利润/);
+  assert.match(pages["理想汽车"].html, /单车汽车收入/);
+  assert.match(pages["高通"].html, /QCT 与 QTL 并列，汽车业务属于 QCT/);
+  assert.match(pages["高通"].html, /FY2026 9M/);
+  assert.match(pages["英伟达"].html, /FY2027Q1 新披露框架/);
+  assert.match(pages["英伟达"].html, /旧披露口径 \/ legacy/);
+  assert.doesNotMatch(Object.values(pages).map((page) => page.html).join(""), /以财务数据自身期间判断/);
 });
 
 test("unknown companies return a clean 404", async () => {

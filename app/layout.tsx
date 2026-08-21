@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Script from "next/script";
 import "./globals.css";
 
@@ -28,13 +27,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body>
         <header className="topbar">
-          <Link className="brand" href="/">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a className="brand" href="/">
             <span className="brand-mark">云见</span>
             <span>
               <strong>云见财报</strong>
               <small>公司财务与经营数据</small>
             </span>
-          </Link>
+          </a>
         </header>
         {children}
         <footer>

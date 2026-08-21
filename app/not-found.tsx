@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function NotFound() {
   return (
     <main>
@@ -8,7 +6,8 @@ export default function NotFound() {
         <h1>暂无这家公司的财报数据</h1>
         <p>当前结构化输入没有对应的公司页面。</p>
         <small>不会使用其他公司的数据代替。</small>
-        <Link className="button-link" href="/">返回公司列表</Link>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a className="button-link" href="/">返回公司列表</a>
       </section>
     </main>
   );

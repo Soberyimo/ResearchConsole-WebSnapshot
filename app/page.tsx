@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import snapshot from "../snapshot/visualizer_snapshot.json";
 
 export const metadata: Metadata = {
@@ -45,7 +44,7 @@ export default function Home() {
           <div className="industry-heading"><h3>{industry}</h3><span>{industryCompanies.length} 家公司</span></div>
           <div className="company-grid">
             {industryCompanies.map((company) => (
-              <Link className="company-card company-card-link" href={`/company/${company.company_slug}`} key={company.company_slug}>
+              <a className="company-card company-card-link" href={`/company/${company.company_slug}`} key={company.company_slug}>
                 <div className="company-card-head">
                   <div><p className="eyebrow">{company.industry}</p><h2>{company.display_name}</h2><p>{company.ticker || "A股口径"}</p></div>
                   <span className="latest-period"><small>最新财务期</small><strong>{company.target_period || "—"}</strong></span>
@@ -56,7 +55,7 @@ export default function Home() {
                   ))}
                 </div>
                 <div className="card-footer single"><span className="arrow">进入公司页 →</span></div>
-              </Link>
+              </a>
             ))}
           </div>
         </section>
